@@ -1,0 +1,80 @@
+import React from "react";
+import { Color } from "../../styles/Color";
+import { StyleSheet, Image, SafeAreaView, View } from "react-native";
+import SignButton from "../../components/login/SignButton";
+
+function Login(){
+    return(
+        <SafeAreaView style={styles.container}>
+            <View style={styles.content}>
+                <Image source={require('../../assets/byte-eats-logo.png')} style={styles.img}></Image>
+                <View>
+                    <SignButton
+                        text="Sign Up"
+                        styleButton={styles.signUp}
+                        styleText={styles.btnTextSignUp}
+                        loginAction='SignUp'
+                        authprovider="sign"
+                    ></SignButton>
+                    <SignButton
+                        text="Sign in"
+                        styleButton={styles.signIn}
+                        styleText={styles.btnTextSignIn}
+                        loginAction='SignIn'
+                        authprovider="sign"
+                    ></SignButton>
+                </View>
+            </View>
+        </SafeAreaView>
+    )
+}
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: Color.lightPurple,
+        flex: 1,
+    },
+    content: {
+        alignItems: 'center',
+        marginTop: 160,
+    },
+    login: {
+        paddingLeft: 20,
+        paddingRight: 20,
+        marginTop: 90,
+        height: 900,
+        backgroundColor: 'transparent'
+    },
+    img: {
+        width: 300,
+        height: 300
+    },  
+    signUp: {
+        backgroundColor: Color.darkPurple,
+        color: Color.white,
+        width: 240,
+        textShadowColor: 'black',
+        fontSize: 20,
+        fontWeight: 700,
+    },
+    signIn: {
+        backgroundColor: 'transparent',
+        borderWidth: 1.4,
+        borderColor: Color.darkPurple,
+        marginTop: 18,
+        fontSize: 20,
+        fontWeight: 700,
+    },
+    btnTextSignIn: {
+        fontSize: 20,
+        fontWeight: 700,
+        color: Color.darkPurple,
+    },
+    btnTextSignUp: {
+        fontSize: 20,
+        fontWeight: 700,
+        color: Color.white,
+    }
+})
+
+export default Login;
