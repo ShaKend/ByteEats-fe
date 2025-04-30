@@ -3,7 +3,7 @@ import { View, SafeAreaView, Text, StyleSheet } from "react-native";
 function Dashboard(){
     return(
         <SafeAreaView style={styles.container}>
-            <Text>This is dashboard</Text>
+            <Text>This is dashboard property made by sharlene!</Text>
         </SafeAreaView>
     );
 }
