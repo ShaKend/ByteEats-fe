@@ -1,9 +1,11 @@
 import { View, SafeAreaView, Text, StyleSheet } from "react-native";
 
-function Dashboard(){
+function Home(){
+    console.log("Home page loaded!");
+    
     return(
         <SafeAreaView style={styles.container}>
-            <Text>This is food recipe page created by Angeline</Text>
+            <Text>This is dashboard property made by sharlene!</Text>
         </SafeAreaView>
     );
 }
@@ -17,4 +19,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default Dashboard;
+export default Home;

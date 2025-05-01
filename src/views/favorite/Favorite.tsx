@@ -1,9 +1,9 @@
 import { View, SafeAreaView, Text, StyleSheet } from "react-native";
 
-function Dashboard(){
+function Favorite(){
     return(
         <SafeAreaView style={styles.container}>
-            <Text>This is dashboard property made by sharlene!</Text>
+            <Text>This is food recipe page created by Angeline</Text>
         </SafeAreaView>
     );
 }
@@ -17,4 +17,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default Dashboard;
+export default Favorite;
