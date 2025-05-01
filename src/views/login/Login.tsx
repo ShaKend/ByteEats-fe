@@ -2,8 +2,30 @@ import React from "react";
 import { Color } from "../../styles/Color";
 import { StyleSheet, Image, SafeAreaView, View } from "react-native";
 import SignButton from "../../components/login/SignButton";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect } from "react";
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+    Home: undefined; 
+};
+
+type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
 function Login(){
+    const navigation = useNavigation<SignScreenNavigationProp>();
+    useEffect(() => {
+        const checkAuth = async () => {
+            const token = await AsyncStorage.getItem('token');
+            if (token) {
+                navigation.navigate('Home');
+            } 
+        };
+        checkAuth();
+    }, []);
+
+
     return(
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>

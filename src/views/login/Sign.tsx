@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ViewStyle, Text
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Color } from "../../styles/Color";
 import SignHeader from "../../components/login/SignHeader";
@@ -45,10 +46,14 @@ function Sign(){
 
     const handleLogin = async() => {
         try{
-            await login(email, password);
+            const response = await login(email, password);
+
+            const token = (response as any).data.token;
+
+            await AsyncStorage.setItem('token', token);
+
             navigation.navigate('Home');
             console.log("Login success!");
-            
         }catch(err){
             console.error("Error: " + err);
         }
