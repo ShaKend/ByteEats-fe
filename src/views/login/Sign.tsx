@@ -18,7 +18,7 @@ type RouteParams = {
 };
 
 type RootStackParamList = {
-    Dashboard: undefined; // No parameters for Dashboard
+    Home: undefined; // No parameters for Dashboard
     Sign: { loginAction: string }; // Parameters for the Sign page
 };
 
@@ -37,7 +37,7 @@ function Sign(){
     const handleCreateUser = async() => {
         try{
             await createUser(email, "manual", username, password);
-            navigation.navigate('Dashboard');
+            navigation.navigate('Home');
         }catch(err){
             console.error("Error: " + err);
         }
@@ -46,7 +46,9 @@ function Sign(){
     const handleLogin = async() => {
         try{
             await login(email, password);
-            navigation.navigate('Dashboard');
+            navigation.navigate('Home');
+            console.log("Login success!");
+            
         }catch(err){
             console.error("Error: " + err);
         }
