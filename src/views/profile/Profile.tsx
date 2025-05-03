@@ -35,7 +35,6 @@ function Profile() {
       try {
         const response = (await getProfile()) as { data: User };
         setUser(response.data);
-        //console.log("User profile:", response.data);
       } catch (err) {
         console.error("Error fetching user profile:", err);
       }
