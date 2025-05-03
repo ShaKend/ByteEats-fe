@@ -1,11 +1,13 @@
 import { View, SafeAreaView, Text, StyleSheet } from "react-native";
-import React from "react";
+import React, { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useEffect } from "react";
 
 import SignButton from "../../components/login/SignButton";
 import { Color } from "../../styles/Color";
+import { getProfile } from "../../service/ApiServiceUser";
 
 type RootStackParamList = {
   Home: undefined; // No parameters for Dashboard
@@ -17,8 +19,29 @@ type SignScreenNavigationProp = NativeStackNavigationProp<
   "Sign"
 >;
 
+type User = {
+  userid: string;
+  username: string;
+  email: string;
+  profilepicture?: string;
+};
+
 function Profile() {
   const navigation = useNavigation<SignScreenNavigationProp>();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = (await getProfile()) as { data: User };
+        setUser(response.data);
+        //console.log("User profile:", response.data);
+      } catch (err) {
+        console.error("Error fetching user profile:", err);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -30,7 +53,7 @@ function Profile() {
   };
   return (
     <SafeAreaView style={styles.container}>
-      <Text>This is profile page!</Text>
+      <Text>Welcome {user?.username}</Text>
 
       <SignButton
         text="Sign Out"
