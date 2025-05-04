@@ -38,6 +38,7 @@ function Sign(){
     const handleCreateUser = async() => {
         try{
             await createUser(email, "manual", username, password);
+            await handleLogin();
             navigation.navigate('Home');
         }catch(err){
             console.error("Error: " + err);
@@ -48,12 +49,15 @@ function Sign(){
         try{
             const response = await login(email, password);
 
-            const token = (response as any).data.token;
+            const token = (response as any).token;
 
-            await AsyncStorage.setItem('token', token);
-
-            navigation.navigate('Home');
-            console.log("Login success!");
+            if (token) {
+                await AsyncStorage.setItem('token', token);
+                navigation.navigate('Home');
+                console.log("Login success!");
+            } else {
+                console.error("Error: Token is undefined. Login failed.");
+            }
         }catch(err){
             console.error("Error: " + err);
         }
