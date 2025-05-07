@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const getUserById = async (userId: string) => {
   try {
-    const response = await axios.get(`${API}/user/${userId}`);
+    const response = await axios.get(`${API}/api/user/${userId}`);
     return response.data;
   } catch (err) {
     console.error("Error fetching user by ID:", err);
@@ -14,7 +14,7 @@ export const getUserById = async (userId: string) => {
 
 export const login = async (email?: string, password?: string) => {
   try {
-    const response = await axios.post(`${API}/login`, { email, password });
+    const response = await axios.post(`${API}/api/login`, { email, password });
     return response.data;
   } catch (err) {
     console.error("Error during login:", err);
@@ -32,7 +32,7 @@ export const createUser = async (
   if (!profilepicture) profilepicture = "./src/assets/favicon.png";
 
   try {
-    const response = await axios.post(`${API}/user/createUser`, {
+    const response = await axios.post(`${API}/api/user/createUser`, {
       email,
       authprovider,
       username,
@@ -53,7 +53,7 @@ export const updateUser = async (
   profilepicture?: string
 ) => {
   try {
-    const response = await axios.put(`${API}/user/updateUser/${userId}`, {
+    const response = await axios.put(`${API}/api/user/updateUser/${userId}`, {
       username,
       password,
       profilepicture,
@@ -71,7 +71,7 @@ export const getProfile = async () => {
     throw new Error("Token not found in AsyncStorage");
   }
   try {
-    const response = await axios.get(`${API}/profile`, {
+    const response = await axios.get(`${API}/api/profile`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
