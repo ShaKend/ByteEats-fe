@@ -3,6 +3,7 @@ import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ViewStyle, Text
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Color } from "../../styles/Color";
 import SignHeader from "../../components/login/SignHeader";
@@ -18,7 +19,7 @@ type RouteParams = {
 };
 
 type RootStackParamList = {
-    Dashboard: undefined; // No parameters for Dashboard
+    Home: undefined; // No parameters for Dashboard
     Sign: { loginAction: string }; // Parameters for the Sign page
 };
 
@@ -37,7 +38,8 @@ function Sign(){
     const handleCreateUser = async() => {
         try{
             await createUser(email, "manual", username, password);
-            navigation.navigate('Dashboard');
+            await handleLogin();
+            navigation.navigate('Home');
         }catch(err){
             console.error("Error: " + err);
         }
@@ -45,8 +47,17 @@ function Sign(){
 
     const handleLogin = async() => {
         try{
-            await login(email, password);
-            navigation.navigate('Dashboard');
+            const response = await login(email, password);
+
+            const token = (response as any).token;
+
+            if (token) {
+                await AsyncStorage.setItem('token', token);
+                navigation.navigate('Home');
+                console.log("Login success!");
+            } else {
+                console.error("Error: Token is undefined. Login failed.");
+            }
         }catch(err){
             console.error("Error: " + err);
         }
