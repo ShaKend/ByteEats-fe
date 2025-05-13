@@ -4,6 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from 'expo-linear-gradient';
+import { CommonActions } from '@react-navigation/native';
 
 import SignButton from "../../components/login/SignButton";
 import { Color } from "../../styles/Color";
@@ -58,7 +59,13 @@ function Profile() {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("token");
-      navigation.replace("Sign", { loginAction: "SignIn" });
+
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Sign', params: { loginAction: 'SignIn' } }], // Or your login screen name
+        })
+      );
     } catch (err) {
       console.error("Logout error:", err);
     }
@@ -206,7 +213,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#C5172E",
     width: 240,
     position: "absolute",
-    bottom: 20,
+    bottom: 60,
     alignSelf: "center",
   },
   text: {
