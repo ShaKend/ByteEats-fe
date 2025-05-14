@@ -50,7 +50,9 @@ export const updateUser = async (
   userId: string,
   username?: string,
   password?: string,
-  profilepicture?: string
+  profilepicture?: string,
+  gender?: string,
+  age?: number
 ) => {
   try {
     const response = await axios.put(`${API}/api/user/updateUser/${userId}`, {

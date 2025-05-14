@@ -5,10 +5,11 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Color } from '../../styles/Color';
 
 interface EditBtnProps {
-    onClick?: () => void;
+    onClick: () => void;
+    text: string;
 }
 
-const EditBtn: React.FC<EditBtnProps> = ({ onClick }) => {
+const EditBtn: React.FC<EditBtnProps> = ({ onClick, text }) => {
     return (
         <View style={styles.container}>
             <TouchableOpacity style={styles.button} onPress={onClick}>

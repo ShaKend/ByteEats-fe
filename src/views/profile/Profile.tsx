@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from 'expo-linear-gradient';
 
 import SignButton from "../../components/login/SignButton";
+import { updateUser } from "../../service/ApiServiceUser";
 import { Color } from "../../styles/Color";
 import { getProfile } from "../../service/ApiServiceUser";
 import { API } from "../../service/ApiService"
@@ -29,6 +30,7 @@ type User = {
   gender?: string;
   age?: string;
   profilepicture?: string;
+  password?: string;
 };
 
 function Profile() {
@@ -41,7 +43,16 @@ function Profile() {
     setIsEditing(!isEditing);
     console.log("editing: ", isEditing);
   }
-  
+
+  // const handleSave = async () => {
+  //   try {
+  //     if(user){
+  //       // const response = await updateUser(user.userid, user.username, user.email, user.gender, Number(user.age));
+  //     }
+  //   }catch (err) {
+  //     console.error("Error saving profile:", err);
+  //   }
+  // }
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -63,7 +74,7 @@ function Profile() {
       console.error("Logout error:", err);
     }
   };
-  // console.log("age: ", user?.age);
+  console.log("User pass: ", user?.password);
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#BB7AE8', 'white']} style={styles.gradient} />
@@ -82,43 +93,44 @@ function Profile() {
         <Text style={styles.editText}>Edit foto</Text>
       </View>
 
-        {/* // <View style={styles.profileInfo}>
-        //   <InfoRow label="Name" value={user?.username} />
-        //   <InfoRow label="Email" value={user?.email} />
-        //   <InfoRow label="Gender" value={user?.gender == 'F' ? 'Female' : 'Male'} />
-        //   <InfoRow label="Age" value={user?.age || '-'} />
-        // </View> */}
-
-        <View>
+        <View style={{marginTop: 40}}>
           <Textbox
             value={user?.username}
             onChange={(value) => setUser(user ? { ...user, username: value } : null)}
-            isDisabled={isEditing}
+            isDisabled={!isEditing}
             label="Name"
-            styleTextbox={{marginTop: 40}}
           />
           <Textbox
             value={user?.email}
             onChange={(value) => setUser(user ? { ...user, email: value } : null)}
-            isDisabled={isEditing}
+            isDisabled={!isEditing}
             label="Email"
           />
           <Textbox
             value={user?.gender == 'F' ? 'Female' : 'Male'}
             onChange={(value) => setUser(user ? { ...user, gender: value } : null)}
-            isDisabled={isEditing}
+            isDisabled={!isEditing}
             label="Gender"
           />
           <Textbox
             value={user?.age?.toString() || '-'}
             onChange={(value) => setUser(user ? { ...user, age: value } : null)}
-            isDisabled={isEditing}
+            isDisabled={!isEditing}
             label="Age"
           />
+          {!isEditing ? "" : 
+            <Textbox
+              value={""}
+              onChange={(value) => setUser(user ? { ...user, password: value } : null)}
+              isDisabled={!isEditing}
+              label="Password"
+            />
+          }
         </View>
 
         <EditBtn
           onClick={() => handleEditing()}
+          text={isEditing ? "Save" : "Edit Profile"}
         />
 
       <SignButton

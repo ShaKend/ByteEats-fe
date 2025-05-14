@@ -13,7 +13,7 @@ const Textbox: React.FC<TextboxProps> = ({
     styleTextbox,
     value,
     onChange, 
-    isDisabled = true,
+    isDisabled,
     label
 }) => {
     return (
@@ -22,11 +22,10 @@ const Textbox: React.FC<TextboxProps> = ({
                 <Text style={styles.text}>{label}</Text>
             </View>
             <TextInput
-                style={styles.textInput}
-                placeholderTextColor="gray"
+                style={[styles.textInput, { opacity: isDisabled ? 0.5 : 1 }]}
                 value={value} // Bind the value prop
                 onChangeText={onChange} // Use the onChange prop
-                editable={!isDisabled} // Disable the TextInput if isDisabled is true
+                editable={isDisabled} // Disable the TextInput if isDisabled is true
             />
         </View>
     );
