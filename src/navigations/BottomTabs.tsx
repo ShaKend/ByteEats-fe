@@ -15,15 +15,22 @@ const Tab = createBottomTabNavigator();
 export default function BottomTabs() {
   return (
     <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { 
-            backgroundColor: Color.darkPurple,
-            paddingTop: 5 
-        },
-        tabBarInactiveTintColor: Color.white,
-        tabBarShowLabel: false,
+    initialRouteName="Home"
+    screenOptions={{
+      headerShown: false,
+      tabBarStyle: { 
+          backgroundColor: Color.darkPurple,
+          paddingTop: 2,     
+          height: 60,              
+          position: 'absolute',    
+          borderTopWidth: 0,  
+          borderTopLeftRadius: 10,
+          borderTopRightRadius: 10,
+      },
+      tabBarInactiveTintColor: Color.white,
+      tabBarActiveTintColor: Color.lightPurple,
+      tabBarShowLabel: true, 
+      tabBarLabelStyle: { fontSize: 12 }, 
       }}
     >
     <Tab.Screen 
@@ -44,7 +51,7 @@ export default function BottomTabs() {
         name="History" 
         component={History}
         options={{
-            tabBarIcon: ({ color, size }) => <Icon name="list" color={color} size={size} />,
+            tabBarIcon: ({ color, size }) => <Icon name="history" color={color} size={size} />,
         }}
     />
     <Tab.Screen 
