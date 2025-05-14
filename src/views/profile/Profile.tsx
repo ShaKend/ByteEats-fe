@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#C5172E",
     width: 240,
     position: "absolute",
-    bottom: 20,
+    bottom: 70,
     alignSelf: "center",
   },
   text: {
