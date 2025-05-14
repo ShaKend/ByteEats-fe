@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TextInput, Image, ScrollView, ActivityIndicator, } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define types
 interface Meal {
@@ -17,11 +19,12 @@ interface MealResponse {
 function Home() {
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
+    const [username, setUsername] = useState<string | null>(null);
 
     // Fetch meals from API
     useEffect(() => {
         axios
-            .get('https://www.themealdb.com/api/json/v1/1/search.php?f=b') // Get meals starting with 'b'
+            .get('https://www.themealdb.com/api/json/v1/1/search.php?f=b')
             .then((response) => {
                 const data = response.data as MealResponse; // Cast response.data to MealResponse
                 if (data.meals) {
@@ -35,15 +38,25 @@ function Home() {
                 console.error('Error fetching meals:', error);
                 setLoading(false);
             });
+            const fetchUsername = async () => {
+                const storedUsername = await AsyncStorage.getItem('username');
+                setUsername(storedUsername); // Set the username if found in AsyncStorage
+            };
+    
+            fetchUsername();
     }, []);
 
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView>
                 {/* Greeting */}
+                <LinearGradient
+                    colors={['#D8BDF7','#E2C9FA', '#fff']}
+                    style={styles.headerGradient}
+                >
                 <View style={styles.header}>
                     <View>
-                        <Text style={styles.greeting}>Hello, Lene!</Text>
+                    <Text style={styles.greeting}>Hello, Lene!</Text>
                         <Text style={styles.subtitle}>Achieve Your Nutrition Goals</Text>
                     </View>
                     <Image
@@ -51,6 +64,7 @@ function Home() {
                         style={styles.avatar}
                     />
                 </View>
+                
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
@@ -61,6 +75,7 @@ function Home() {
                         placeholderTextColor="#888"
                     />
                 </View>
+            </LinearGradient>
                 {/* Food Categories */}
                 <View style={styles.categoryContainer}>
                     <View style={styles.categoryBox}>
@@ -87,14 +102,14 @@ function Home() {
                 </View>
 
                 {/* Recommendations */}
-            
+
                 <Text style={styles.recommendationTitle}>Recommendation For You!</Text>
                 {loading ? (
                     <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
                 ) : (
                     <View style={styles.recommendationContainer}>
                         {recommendations.map((item, index) => (
-                        
+
                             <View key={index} style={styles.recommendationCard}>
                                 <Image
                                     source={{ uri: item.strMealThumb }}
@@ -111,9 +126,15 @@ function Home() {
 }
 
 const styles = StyleSheet.create({
+    headerGradient: {
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: 30,
+      },
     container: {
         flex: 1,
-        paddingHorizontal: 20,
         backgroundColor: '#fff',
     },
     header: {
@@ -140,7 +161,7 @@ const styles = StyleSheet.create({
         marginTop: 20,
         borderWidth: 1,
         borderColor: '#5D2084',
-        borderRadius: 10,
+        borderRadius: 20,
         paddingHorizontal: 15,
         paddingVertical: 10,
     },
@@ -150,7 +171,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#5D2084',
-        borderRadius: 10,
+        borderRadius: 20,
         paddingHorizontal: 10,
         backgroundColor: '#fff',
     },
@@ -166,6 +187,7 @@ const styles = StyleSheet.create({
         marginTop: 30,
         flexDirection: 'row',
         justifyContent: 'space-between',
+        paddingHorizontal: 15,
     },
     categoryBox: {
         width: '30%',
@@ -176,7 +198,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: '#5D2084',
-        shadowColor: '#000',          
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
@@ -192,6 +214,7 @@ const styles = StyleSheet.create({
     },
     recommendationTitle: {
         marginTop: 30,
+        marginHorizontal: 20,
         fontSize: 20,
         fontWeight: 'bold',
     },
@@ -202,8 +225,9 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     recommendationCard: {
-        width: '47%',
+        width: '44%',
         marginVertical: 10,
+        marginHorizontal: '3%',
         borderWidth: 1,
         borderColor: '#5D2084',
         borderRadius: 12,
