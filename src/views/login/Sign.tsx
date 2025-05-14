@@ -164,8 +164,7 @@ function Sign(){
                     loginAction={loginAction}
                     onPress={() => {loginAction == 'SignUp' ? handleCreateUser() : handleLogin()}}
                 />
-                <Button title="Test" onPress={() => {console.log({eml: email, pass: password});
-                }}></Button>
+                
                 <DividerMedia></DividerMedia>
 
                 {/* Ignore this component */}
