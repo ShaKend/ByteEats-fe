@@ -14,7 +14,7 @@ const Textbox: React.FC<TextboxProps> = ({
     value,
     onChange, 
     isDisabled,
-    label
+    label,
 }) => {
     return (
         <View style={[styles.container, styleTextbox]}>
@@ -22,10 +22,10 @@ const Textbox: React.FC<TextboxProps> = ({
                 <Text style={styles.text}>{label}</Text>
             </View>
             <TextInput
-                style={[styles.textInput, { opacity: isDisabled ? 0.5 : 1 }]}
-                value={value} // Bind the value prop
-                onChangeText={onChange} // Use the onChange prop
-                editable={isDisabled} // Disable the TextInput if isDisabled is true
+                style={[styles.textInput, { opacity: isDisabled ? 1 : 0.5 }]}
+                value={value} 
+                onChangeText={onChange} 
+                editable={isDisabled} 
             />
         </View>
     );
@@ -37,14 +37,12 @@ const styles = StyleSheet.create({
         marginTop: 20,
         display: 'flex',
         flexDirection: 'row',
-        // borderColor: 'gray',
-        // borderWidth: 0.5,
     },
     text: {
         fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
-        width: 70,
+        width: 80,
     },
     textInput: {
         paddingVertical: 0,

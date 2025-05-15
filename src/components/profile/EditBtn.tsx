@@ -14,7 +14,7 @@ const EditBtn: React.FC<EditBtnProps> = ({ onClick, text }) => {
         <View style={styles.container}>
             <TouchableOpacity style={styles.button} onPress={onClick}>
                 <Icon name="edit" size={20} color={Color.darkPurple} />
-                <Text style={styles.text}>Edit Profile</Text>
+                <Text style={styles.text}>{text}</Text>
             </TouchableOpacity>
         </View>
     );

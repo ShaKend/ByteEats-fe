@@ -5,6 +5,10 @@ import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from 'expo-linear-gradient';
 import { CommonActions } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { Platform } from 'react-native';
+import axios from 'axios'; // Assuming you're using axios for requests
 
 import SignButton from "../../components/login/SignButton";
 import { updateUser } from "../../service/ApiServiceUser";
@@ -40,20 +44,73 @@ function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
-  const handleEditing = () => {
-    setIsEditing(!isEditing);
-    console.log("editing: ", isEditing);
-  }
+  const handleEdit = async () => {
+    if (isEditing) {
+      try {
+        if (user) {
+          let updatedProfilePicture = user.profilepicture;
 
-  // const handleSave = async () => {
-  //   try {
-  //     if(user){
-  //       // const response = await updateUser(user.userid, user.username, user.email, user.gender, Number(user.age));
-  //     }
-  //   }catch (err) {
-  //     console.error("Error saving profile:", err);
-  //   }
-  // }
+          // If the user picked a new image
+          if (user.profilepicture && user.profilepicture.startsWith("file://")) {
+            const formData = new FormData();
+            formData.append("profileImage", {
+              uri: user.profilepicture,
+              name: "profile.jpg",
+              type: "image/jpeg",
+            } as any); // Cast to 'any' to satisfy React Native FormData typing
+
+            const uploadResponse = await axios.post(`${API}/upload-profile-image`, formData, {
+              headers: {
+                "Content-Type": "multipart/form-data",
+              },
+            });
+
+            updatedProfilePicture = (uploadResponse.data as { filename: string }).filename;
+          }
+
+          // Then update user details
+          const updateResponse = await updateUser(
+            user.userid,
+            user.username,
+            user.password,
+            updatedProfilePicture,
+            user.gender,
+            Number(user.age)
+          );
+
+          if (updateResponse && typeof updateResponse === 'object' && 'data' in updateResponse) {
+            setUser(updateResponse.data as User);
+          }
+        }
+      } catch (err) {
+        console.error("Error saving profile:", err);
+      }
+    }
+
+    setIsEditing(!isEditing);
+  };
+
+  const handleImagePicker = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (permissionResult.granted === false) {
+      alert("Permission to access camera roll is required!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setUser(user ? { ...user, profilepicture: result.assets[0].uri } : null);
+    }
+  };
+
+
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -81,7 +138,7 @@ function Profile() {
       console.error("Logout error:", err);
     }
   };
-  console.log("User pass: ", user?.password);
+  //console.log("User pass: ", user?.password);
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#BB7AE8', 'white']} style={styles.gradient} />
@@ -102,41 +159,41 @@ function Profile() {
 
         <View style={{marginTop: 40}}>
           <Textbox
-            value={user?.username}
-            onChange={(value) => setUser(user ? { ...user, username: value } : null)}
-            isDisabled={!isEditing}
-            label="Name"
-          />
-          <Textbox
             value={user?.email}
             onChange={(value) => setUser(user ? { ...user, email: value } : null)}
-            isDisabled={!isEditing}
+            isDisabled={false}
             label="Email"
+          />
+          <Textbox
+            value={user?.username}
+            onChange={(value) => setUser(user ? { ...user, username: value } : null)}
+            isDisabled={isEditing}
+            label="Name"
           />
           <Textbox
             value={user?.gender == 'F' ? 'Female' : 'Male'}
             onChange={(value) => setUser(user ? { ...user, gender: value } : null)}
-            isDisabled={!isEditing}
+            isDisabled={isEditing}
             label="Gender"
           />
           <Textbox
             value={user?.age?.toString() || '-'}
             onChange={(value) => setUser(user ? { ...user, age: value } : null)}
-            isDisabled={!isEditing}
+            isDisabled={isEditing}
             label="Age"
           />
           {!isEditing ? "" : 
             <Textbox
               value={""}
               onChange={(value) => setUser(user ? { ...user, password: value } : null)}
-              isDisabled={!isEditing}
+              isDisabled={isEditing}
               label="Password"
             />
           }
         </View>
 
         <EditBtn
-          onClick={() => handleEditing()}
+          onClick={() => handleEdit()}
           text={isEditing ? "Save" : "Edit Profile"}
         />
 

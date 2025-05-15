@@ -29,7 +29,7 @@ export const createUser = async (
   password?: string,
   profilepicture?: string
 ) => {
-  if (!profilepicture) profilepicture = "./src/assets/favicon.png";
+  if (!profilepicture) profilepicture = "profile.png";
 
   try {
     const response = await axios.post(`${API}/api/user/createUser`, {
@@ -59,6 +59,8 @@ export const updateUser = async (
       username,
       password,
       profilepicture,
+      gender,
+      age
     });
     return response.data;
   } catch (err) {
