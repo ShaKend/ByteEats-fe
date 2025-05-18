@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
-import MenuList, { MenuItem } from '../components/MenuList';
+import MenuList, { MenuItem } from '../../components/MenuList';
 
 export default function BreakfastMenu() {
   const [data, setData] = useState<MenuItem[]>([]);

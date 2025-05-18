@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, Image, ScrollView, ActivityIndicator, } from 'react-native';
+import {
+    View, Text, StyleSheet, SafeAreaView, TextInput, Image, ScrollView, ActivityIndicator, TouchableOpacity,
+} from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { FlatList } from 'react-native';
 
-// Define types
 interface Meal {
     idMeal: string;
     strMeal: string;
@@ -16,21 +20,49 @@ interface MealResponse {
     meals: Meal[] | null;
 }
 
+type RootStackParamList = {
+    Home: undefined;
+    Login: undefined;
+    Sign: undefined;
+    Detail: { meal: Meal };
+    BreakfastMenu: undefined;
+    LunchMenu: undefined;
+    DinnerMenu: undefined;
+};
+
 function Home() {
+    const [searchQuery, setSearchQuery] = useState('');
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState<string | null>(null);
+    const [page, setPage] = useState(1);
+    const ITEMS_PER_PAGE = 10;
+    const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
 
-    // Fetch meals from API
-    useEffect(() => {
+    const onCategoryPress = (category: string) => {
+        if (category === 'Breakfast') {
+            navigation.navigate('BreakfastMenu');
+        } else if (category === 'Lunch') {
+            navigation.navigate('LunchMenu');
+        } else if (category === 'Dinner') {
+            navigation.navigate('DinnerMenu');
+        }
+    };
+
+    const fetchMeals = (query: string, pageNum = 1) => {
+        setLoading(true);
         axios
-            .get('https://www.themealdb.com/api/json/v1/1/search.php?f=b')
+            .get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`)
             .then((response) => {
-                const data = response.data as MealResponse; // Cast response.data to MealResponse
+                const data = response.data as MealResponse;
                 if (data.meals) {
-                    setRecommendations(data.meals);
+                    if (pageNum === 1) {
+                        setRecommendations(data.meals);
+                    } else {
+                        setRecommendations((prev) => [...(prev ?? []), ...(data.meals ?? [])]);
+                    }
                 } else {
-                    setRecommendations([]);
+                    if (pageNum === 1) setRecommendations([]);
                 }
                 setLoading(false);
             })
@@ -38,25 +70,34 @@ function Home() {
                 console.error('Error fetching meals:', error);
                 setLoading(false);
             });
-            const fetchUsername = async () => {
-                const storedUsername = await AsyncStorage.getItem('username');
-                setUsername(storedUsername); // Set the username if found in AsyncStorage
-            };
-    
-            fetchUsername();
+    };
+
+    useEffect(() => {
+        fetchMeals('');
+        const fetchUsername = async () => {
+            const storedUsername = await AsyncStorage.getItem('username');
+            setUsername(storedUsername);
+        };
+        fetchUsername();
     }, []);
+
+    useEffect(() => {
+        const delayDebounce = setTimeout(() => {
+            fetchMeals(searchQuery);
+        }, 500);
+
+        return () => clearTimeout(delayDebounce);
+    }, [searchQuery]);
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
-                {/* Greeting */}
-                <LinearGradient
-                    colors={['#D8BDF7','#E2C9FA', '#fff']}
-                    style={styles.headerGradient}
-                >
+            <LinearGradient
+                colors={['#D8BDF7', '#E2C9FA', '#F5F5F5']}
+                style={styles.headerGradient}
+            >
                 <View style={styles.header}>
                     <View>
-                    <Text style={styles.greeting}>Hello, Lene!</Text>
+                        <Text style={styles.greeting}>Hello, {username ?? 'Guest'}!</Text>
                         <Text style={styles.subtitle}>Achieve Your Nutrition Goals</Text>
                     </View>
                     <Image
@@ -64,7 +105,6 @@ function Home() {
                         style={styles.avatar}
                     />
                 </View>
-                
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
@@ -73,50 +113,56 @@ function Home() {
                         placeholder="Search here"
                         style={styles.searchInput}
                         placeholderTextColor="#888"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery} // update state saat input berubah
                     />
                 </View>
             </LinearGradient>
+
+            <ScrollView>
                 {/* Food Categories */}
                 <View style={styles.categoryContainer}>
-                    <View style={styles.categoryBox}>
+                    <TouchableOpacity style={styles.categoryBox} onPress={() => onCategoryPress('Breakfast')}>
                         <Image
                             source={require('../../assets/PaindeMie.png')}
                             style={styles.categoryImage}
                         />
                         <Text style={styles.categoryText}>Breakfast</Text>
-                    </View>
-                    <View style={styles.categoryBox}>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.categoryBox} onPress={() => onCategoryPress('Lunch')}>
                         <Image
                             source={require('../../assets/JapaneseCurry.png')}
                             style={styles.categoryImage}
                         />
                         <Text style={styles.categoryText}>Lunch</Text>
-                    </View>
-                    <View style={styles.categoryBox}>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.categoryBox} onPress={() => onCategoryPress('Dinner')}>
                         <Image
                             source={require('../../assets/Steak.png')}
                             style={styles.categoryImage}
                         />
                         <Text style={styles.categoryText}>Dinner</Text>
-                    </View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Recommendations */}
-
                 <Text style={styles.recommendationTitle}>Recommendation For You!</Text>
                 {loading ? (
                     <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
                 ) : (
                     <View style={styles.recommendationContainer}>
                         {recommendations.map((item, index) => (
-
-                            <View key={index} style={styles.recommendationCard}>
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.recommendationCard}
+                                onPress={() => navigation.navigate('Detail', { meal: item })}
+                            >
                                 <Image
                                     source={{ uri: item.strMealThumb }}
                                     style={styles.recommendationImage}
                                 />
                                 <Text style={styles.recommendationText}>{item.strMeal}</Text>
-                            </View>
+                            </TouchableOpacity>
                         ))}
                     </View>
                 )}
@@ -132,10 +178,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         paddingTop: 20,
         paddingBottom: 30,
-      },
+    },
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#F5F5F5',
     },
     header: {
         marginTop: 50,
@@ -156,14 +202,7 @@ const styles = StyleSheet.create({
         width: 60,
         height: 60,
         borderRadius: 30,
-    },
-    search: {
-        marginTop: 20,
-        borderWidth: 1,
-        borderColor: '#5D2084',
-        borderRadius: 20,
-        paddingHorizontal: 15,
-        paddingVertical: 10,
+        elevation: 10,
     },
     searchContainer: {
         marginTop: 20,
@@ -174,6 +213,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingHorizontal: 10,
         backgroundColor: '#fff',
+        elevation: 5,
     },
     searchIcon: {
         marginRight: 8,
@@ -182,6 +222,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingVertical: 10,
         fontSize: 16,
+        color: '#000',
     },
     categoryContainer: {
         marginTop: 30,
@@ -198,11 +239,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 1,
         borderColor: '#5D2084',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-        elevation: 4,
+        elevation: 5,
     },
     categoryImage: {
         width: 70,
@@ -223,16 +260,18 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         marginTop: 10,
+        paddingHorizontal: 10,
     },
     recommendationCard: {
-        width: '44%',
+        width: '43%',
         marginVertical: 10,
         marginHorizontal: '3%',
         borderWidth: 1,
         borderColor: '#5D2084',
-        borderRadius: 12,
+        borderRadius: 14,
         overflow: 'hidden',
         backgroundColor: '#fff',
+        elevation: 4,
     },
     recommendationImage: {
         width: '100%',

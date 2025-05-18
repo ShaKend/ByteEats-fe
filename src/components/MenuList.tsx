@@ -1,12 +1,7 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
+import {View, Text, FlatList, TouchableOpacity, Image, StyleSheet,
 } from 'react-native';
+import { useNavigation, NavigationProp } from '@react-navigation/native';
 
 export type MenuItem = {
   id: string;
@@ -20,7 +15,12 @@ type Props = {
   showBackArrow?: boolean;
 };
 
+type RootStackParamList = {
+  Home: undefined;
+};
+
 const MenuList = ({ title, data, showBackArrow = true }: Props) => {
+  const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const renderItem = ({ item }: { item: MenuItem }) => (
     <TouchableOpacity style={styles.card}>
       <Image source={{ uri: item.image }} style={styles.image} />
@@ -30,8 +30,15 @@ const MenuList = ({ title, data, showBackArrow = true }: Props) => {
 
   return (
     <>
-      <View style={styles.header}>
-        {showBackArrow && <Text style={styles.backArrow}>←</Text>}
+       <View style={styles.header}>
+        {showBackArrow && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Home')}
+            style={styles.backArrow}
+          >
+            <Text style={{ fontSize: 30 }}>←</Text>
+          </TouchableOpacity>
+        )}
         <Text style={styles.headerText}>{title}</Text>
       </View>
       <FlatList
@@ -77,11 +84,12 @@ const styles = StyleSheet.create({
   card: {
     width: '47%',
     marginVertical: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#5D2084',
+    elevation: 5,
   },
   image: {
     width: '100%',
