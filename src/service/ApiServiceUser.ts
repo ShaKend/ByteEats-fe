@@ -5,6 +5,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const getUserById = async (userId: string) => {
   try {
     const response = await axios.get(`${API}/api/user/${userId}`);
+    if (response.status !== 200) {
+      throw new Error("Failed to fetch user data");
+    }
     return response.data;
   } catch (err) {
     console.error("Error fetching user by ID:", err);
@@ -15,6 +18,9 @@ export const getUserById = async (userId: string) => {
 export const login = async (email?: string, password?: string) => {
   try {
     const response = await axios.post(`${API}/api/login`, { email, password });
+    if (response.status !== 200) {
+      throw new Error("Login failed");
+    }
     return response.data;
   } catch (err) {
     console.error("Error during login:", err);
@@ -39,6 +45,9 @@ export const createUser = async (
       password,
       profilepicture,
     });
+    if (response.status !== 200) {
+      throw new Error("User creation failed");
+    }
     return response.data;
   } catch (err) {
     console.error("Error creating user:", err);
@@ -50,7 +59,6 @@ export const updateUser = async (
   userId: string,
   username?: string,
   password?: string,
-  profilepicture?: string,
   gender?: string,
   age?: number
 ) => {
@@ -58,10 +66,12 @@ export const updateUser = async (
     const response = await axios.put(`${API}/api/user/updateUser/${userId}`, {
       username,
       password,
-      profilepicture,
       gender,
       age
     });
+    if (response.status !== 200) {
+      throw new Error("User update failed");
+    }
     return response.data;
   } catch (err) {
     console.error("Error updating user:", err);
@@ -80,9 +90,31 @@ export const getProfile = async () => {
         Authorization: `Bearer ${token}`,
       },
     });
+    if (response.status !== 200) {
+      throw new Error("Failed to fetch profile");
+    }
     return response.data;
   } catch (err) {
     console.error("Error fetching profile:", err);
     throw err;
   }
 };
+
+export const updateProfileImage = async (formData: FormData) => {
+  const token = await AsyncStorage.getItem("token");
+  if (!token) {
+    throw new Error("Token not found in AsyncStorage");
+  }
+  try {
+    const response = await axios.post(`${API}/api/user/uploadProfileImage`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (err) {
+    console.error("Error uploading profile image:", err);
+    throw err;
+  }
+}

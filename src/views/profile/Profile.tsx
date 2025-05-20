@@ -17,6 +17,7 @@ import { getProfile } from "../../service/ApiServiceUser";
 import { API } from "../../service/ApiService"
 import Textbox from "../../components/profile/Textbox";
 import EditBtn from "../../components/profile/EditBtn";
+import { updateProfileImage, getUserById } from "../../service/ApiServiceUser";
 
 type RootStackParamList = {
   Home: undefined;
@@ -41,76 +42,71 @@ type User = {
 function Profile() {
   const navigation = useNavigation<SignScreenNavigationProp>();
   const [user, setUser] = useState<User | null>(null);
+  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
+  //const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
+
+  const profileUrl = localImageUri
+    ? localImageUri
+    : user?.profilepicture
+      ? `${API}/profile-images/${user?.profilepicture}`
+      : null;
+
 
   const handleEdit = async () => {
     if (isEditing) {
       try {
         if (user) {
-          let updatedProfilePicture = user.profilepicture;
-
-          // If the user picked a new image
+          // If new image is selected (local file), upload it
           if (user.profilepicture && user.profilepicture.startsWith("file://")) {
             const formData = new FormData();
-            formData.append("profileImage", {
+            formData.append("profilepicture", {
               uri: user.profilepicture,
               name: "profile.jpg",
               type: "image/jpeg",
-            } as any); // Cast to 'any' to satisfy React Native FormData typing
-
-            const uploadResponse = await axios.post(`${API}/upload-profile-image`, formData, {
-              headers: {
-                "Content-Type": "multipart/form-data",
-              },
-            });
-
-            updatedProfilePicture = (uploadResponse.data as { filename: string }).filename;
+            } as any);
+          
+            // Just upload, don't care about response filename
+            await updateProfileImage(formData);
           }
-
-          // Then update user details
-          const updateResponse = await updateUser(
+        
+          // Update other user details (assuming backend uses JWT to identify user)
+          await updateUser(
             user.userid,
             user.username,
             user.password,
-            updatedProfilePicture,
-            user.gender,
+            user.gender ?? "",
             Number(user.age)
           );
 
-          if (updateResponse && typeof updateResponse === 'object' && 'data' in updateResponse) {
-            setUser(updateResponse.data as User);
-          }
+            const response = (await getProfile()) as { data: User };
+            setUser(response.data);
+            setLocalImageUri(null);
         }
       } catch (err) {
         console.error("Error saving profile:", err);
       }
     }
-
+  
     setIsEditing(!isEditing);
   };
 
-  const handleImagePicker = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (permissionResult.granted === false) {
-      alert("Permission to access camera roll is required!");
-      return;
-    }
-
+  const handleSelectImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+      quality: 0.7,
+      allowsEditing: false,
     });
 
-    if (!result.canceled) {
-      setUser(user ? { ...user, profilepicture: result.assets[0].uri } : null);
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const selectedImage = result.assets[0];
+      setLocalImageUri(selectedImage.uri);
+      setUser((prevUser) =>
+        prevUser ? { ...prevUser, profilepicture: selectedImage.uri } : null
+      );
     }
   };
-
-
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -145,14 +141,12 @@ function Profile() {
 
       <View style={styles.avatarContainer}>
         <View style={styles.avatar}>
-          <Image
-            source={
-              profileUrl
-              ? { uri: profileUrl }
-              : require('../../assets/byte-eats-logo.png')
-            }
-            style={styles.avatarImage}
-          />
+          <TouchableOpacity onPress={isEditing ? handleSelectImage : undefined}>
+            <Image
+              source={profileUrl ? { uri: profileUrl } : require('../../assets/byte-eats-logo.png')}
+              style={styles.avatarImage}
+            />
+          </TouchableOpacity>
         </View>
         <Text style={styles.editText}>Edit foto</Text>
       </View>
