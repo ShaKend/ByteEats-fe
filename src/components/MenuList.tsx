@@ -17,16 +17,20 @@ type Props = {
 
 type RootStackParamList = {
   Home: undefined;
+  Detail: { mealId: string };
 };
 
 const MenuList = ({ title, data, showBackArrow = true }: Props) => {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const renderItem = ({ item }: { item: MenuItem }) => (
-    <TouchableOpacity style={styles.card}>
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={styles.title}>{item.title}</Text>
-    </TouchableOpacity>
-  );
+  <TouchableOpacity
+    style={styles.card}
+    onPress={() => navigation.navigate('Detail', { mealId: item.id })}
+  >
+    <Image source={{ uri: item.image }} style={styles.image} />
+    <Text style={styles.title}>{item.title}</Text>
+  </TouchableOpacity>
+);
 
   return (
     <>

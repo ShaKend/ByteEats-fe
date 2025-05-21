@@ -24,7 +24,7 @@ type RootStackParamList = {
     Home: undefined;
     Login: undefined;
     Sign: undefined;
-    Detail: { meal: Meal };
+    Detail: { mealId: string };
     BreakfastMenu: undefined;
     LunchMenu: undefined;
     DinnerMenu: undefined;
@@ -153,14 +153,11 @@ function Home() {
                     <View style={styles.recommendationContainer}>
                         {recommendations.map((item, index) => (
                             <TouchableOpacity
-                                key={index}
+                                key={item.idMeal}
                                 style={styles.recommendationCard}
-                                onPress={() => navigation.navigate('Detail', { meal: item })}
+                                onPress={() => navigation.navigate('Detail', { mealId: item.idMeal })}
                             >
-                                <Image
-                                    source={{ uri: item.strMealThumb }}
-                                    style={styles.recommendationImage}
-                                />
+                                <Image source={{ uri: item.strMealThumb }} style={styles.recommendationImage} />
                                 <Text style={styles.recommendationText}>{item.strMeal}</Text>
                             </TouchableOpacity>
                         ))}
