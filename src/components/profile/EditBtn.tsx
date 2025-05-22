@@ -22,7 +22,8 @@ const EditBtn: React.FC<EditBtnProps> = ({ onClick, text }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 40,
+        marginTop: 30,
+        paddingHorizontal: 40,
     },
     text: {
         color: Color.darkPurple, 

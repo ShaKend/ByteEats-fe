@@ -6,9 +6,8 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { LinearGradient } from 'expo-linear-gradient';
 import { CommonActions } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
-import axios from 'axios'; // Assuming you're using axios for requests
+import { useFocusEffect } from '@react-navigation/native';
+import { Picker } from '@react-native-picker/picker';
 
 import SignButton from "../../components/login/SignButton";
 import { updateUser } from "../../service/ApiServiceUser";
@@ -79,9 +78,9 @@ function Profile() {
             Number(user.age)
           );
 
-            const response = (await getProfile()) as { data: User };
-            setUser(response.data);
-            setLocalImageUri(null);
+          const response = (await getProfile()) as { data: User };
+          setUser(response.data);
+          setLocalImageUri(null);          
         }
       } catch (err) {
         console.error("Error saving profile:", err);
@@ -107,6 +106,21 @@ function Profile() {
       );
     }
   };
+  
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem("token");
+      
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Sign', params: { loginAction: 'SignIn' } }], // Or your login screen name
+        })
+      );
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -120,20 +134,15 @@ function Profile() {
     fetchUserProfile();
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem("token");
-
-      navigation.dispatch(
-        CommonActions.reset({
-          index: 0,
-          routes: [{ name: 'Sign', params: { loginAction: 'SignIn' } }], // Or your login screen name
-        })
-      );
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
+  useFocusEffect(
+    React.useCallback(() => {
+      // When the screen is focused, do nothing special
+      return () => {
+        // When the screen is unfocused (navigated away), reset isEditing
+        setIsEditing(false);
+      };
+    }, [])
+  );
   //console.log("User pass: ", user?.password);
   return (
     <SafeAreaView style={styles.container}>
@@ -150,8 +159,7 @@ function Profile() {
         </View>
         <Text style={styles.editText}>Edit foto</Text>
       </View>
-
-        <View style={{marginTop: 40}}>
+        <View style={{marginTop: 20}}>
           <Textbox
             value={user?.email}
             onChange={(value) => setUser(user ? { ...user, email: value } : null)}
@@ -164,12 +172,7 @@ function Profile() {
             isDisabled={isEditing}
             label="Name"
           />
-          <Textbox
-            value={user?.gender == 'F' ? 'Female' : 'Male'}
-            onChange={(value) => setUser(user ? { ...user, gender: value } : null)}
-            isDisabled={isEditing}
-            label="Gender"
-          />
+
           <Textbox
             value={user?.age?.toString() || '-'}
             onChange={(value) => setUser(user ? { ...user, age: value } : null)}
@@ -184,6 +187,27 @@ function Profile() {
               label="Password"
             />
           }
+          <View style={styles.ddContainer}>
+            <Text style={styles.ddText}>Gender</Text>
+            <View
+              style={styles.dropdown}>
+              <Picker
+              style={{ paddingLeft:0, marginLeft:0 }}
+                selectedValue={user?.gender ?? ''}
+                onValueChange={(itemValue) =>
+                  isEditing &&
+                  setUser((prevUser) =>
+                    prevUser ? { ...prevUser, gender: itemValue } : null
+                  )
+                }
+                enabled={isEditing}
+              >
+                <Picker.Item label="Select Gender" value="" />
+                <Picker.Item label="Male" value="M" />
+                <Picker.Item label="Female" value="F" />
+              </Picker>
+            </View>
+          </View>
         </View>
 
         <EditBtn
@@ -199,16 +223,10 @@ function Profile() {
         authprovider="sign"
         onPress={handleLogout}
       />
+
     </SafeAreaView>
   );
 }
-
-const InfoRow = ({ label, value }: { label: string; value?: string }) => (
-  <View style={styles.infoRow}>
-    <Text style={styles.label}>{label}</Text>
-    <Text style={styles.value}>{value}</Text>
-  </View>
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -223,7 +241,7 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     alignItems: "center",
-    marginTop: 80,
+    marginTop: 50,
   },
   avatar: {
     height: 100,
@@ -272,6 +290,27 @@ const styles = StyleSheet.create({
     color: "#555",
   },
 
+  // dropdown
+  ddContainer: {
+    paddingHorizontal: 40,
+    marginVertical: 10,
+    display: 'flex',
+    flexDirection: 'row',
+  },
+  ddText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'black',
+    width: 80,
+    paddingTop: 14,
+  },
+  dropdown: {
+    borderBottomWidth: 0.5,
+    marginLeft: 10,
+    width: 200,
+  },
+
+  // sign out button
   btn: {
     backgroundColor: "#C5172E",
     width: 240,
