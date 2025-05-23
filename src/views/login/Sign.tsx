@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextInput, Button } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Color } from "../../styles/Color";
-import SignHeader from "../../components/login/SignHeader";
 import SignButton from "../../components/login/SignButton";
 import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
@@ -25,34 +24,43 @@ type RootStackParamList = {
 
 type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Sign'>;
 
+type User = {
+    email: string;
+    password: string;
+    username?: string;
+};
+
 function Sign(){
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
     const navigation = useNavigation<SignScreenNavigationProp>();
 
     const [action, setAction] = useState(loginAction);
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
 
     const handleCreateUser = async() => {
         try{
-            await createUser(email, "manual", username, password);
+            await createUser(user?.email, "manual", user?.username, user?.password);
             await handleLogin();
             navigation.navigate('Home');
         }catch(err){
             console.error("Error: " + err);
         }
-    }
+    };
 
     const handleLogin = async() => {
         try{
-            const response = await login(email, password);
+            console.log("email: " + user?.email);
+            console.log("password: " + user?.password);
+            const response = await login(user?.email, user?.password);
 
             const token = (response as any).token;
+            console.log("Token: " + token);
+            
 
             if (token) {
                 await AsyncStorage.setItem('token', token);
+                
                 navigation.navigate('Home');
                 console.log("Login success!");
             } else {
@@ -61,7 +69,7 @@ function Sign(){
         }catch(err){
             console.error("Error: " + err);
         }
-    }
+    };
 
     const splitCamelCase = (str: string) => {
         return str.replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -80,13 +88,6 @@ function Sign(){
     return (
         <SafeAreaView style={styles.container}>
 
-            {/* <SignHeader
-                title={splitCamelCase(loginAction)}
-                detail={detailText}
-                styleHeader={styles.header}
-            ></SignHeader> */}
-
-
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>
                     {splitCamelCase(loginAction)}
@@ -98,63 +99,30 @@ function Sign(){
 
 
             <View style={styles.content}>
-
-
-                {/* {loginAction == "SignIn" ? <View></View> :
-                    <Textbox
-                        placeholder="Username" 
-                        iconName="person" 
-                        styleTextbox={styles.firstTextbox}
-                        // onChangeText={setUsername}
-                    >
-                    </Textbox>
-                } */}
-
                 {loginAction == "SignIn" ? <View></View> :                
                     <View style={[styles.firstTextbox, styles.textInputContainer]}>
                         <Icon name={"person"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                         <TextInput
                         placeholder={"Username"}
                         placeholderTextColor="gray"
-                        onChangeText={setUsername}
                         style={styles.textInput}
+                        onChangeText={(value) => {setUser({ ...user, username: value })}}                        
                         />
                     </View>
                 }
 
-                
-                <View style={loginAction == "SignIn" ? [styles.firstTextbox, styles.textInputContainer] : [styles.secondTextbox, styles.textInputContainer]}>
-                    <Icon name={"alternate-email"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                    placeholder={"Email"}
-                    placeholderTextColor="gray"
-                    onChangeText={setEmail}
-                    style={styles.textInput}
-                    />
-                </View>
-
-                <View style={[styles.pass, styles.textInputContainer]}>
-                    <Icon name={"visibility"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                    placeholder={"Password"}
-                    placeholderTextColor="gray"
-                    onChangeText={setPassword}
-                    style={styles.textInput}
-                    />
-                </View>
-
-                {/* <Textbox 
+                <Textbox 
                     placeholder="Email" 
                     iconName="alternate-email" 
                     styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox} 
-                    // onChangeText={setEmail}
-                /> */}
-                {/* <Textbox 
+                    onChangeText={(value) => {setUser({ ...user, email: value })}}
+                />
+                <Textbox 
                     placeholder="Password" 
                     iconName="visibility" 
                     styleTextbox={styles.pass} 
-                    // onChangeText={setPassword}    
-                /> */}
+                    onChangeText={(value) => {setUser({ ...user, password: value })}}                
+                />
 
                 <SignButton 
                     text="Continue" 
