@@ -6,23 +6,35 @@ import { Color } from "../../styles/Color";
 interface TextboxProps{
     styleTextbox?: ViewStyle;
     styleTextInput?: TextStyle;
-    iconName: string;
+    iconName?: string;
     placeholder: string;
     onChangeText?: (text: string) => void;
 }
 
-const Textbox: React.FC<TextboxProps> = ({styleTextbox, styleTextInput, iconName, placeholder, onChangeText}) => {
-    return(
-        <View style={[styles.container, styleTextbox]}>
-            <Icon name={iconName} size={20} color={Color.darkPurple} style={styles.icon} />
-            <TextInput
-              placeholder={placeholder}
-              style={[styles.textInput, styleTextInput]}
-              placeholderTextColor="gray"
-              onChangeText={onChangeText}
-            />
-        </View>
-    );
+const Textbox: React.FC<TextboxProps & { keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; maxLength?: number }> = ({
+  styleTextbox,
+  styleTextInput,
+  iconName,
+  placeholder,
+  onChangeText,
+  keyboardType = "default",
+  maxLength
+}) => {
+  return (
+    <View style={[styles.container, styleTextbox]}>
+      {iconName && (
+        <Icon name={iconName} size={20} color={Color.darkPurple} style={styles.icon} />
+      )}
+      <TextInput
+        placeholder={placeholder}
+        style={[styles.textInput, styleTextInput]}
+        placeholderTextColor="gray"
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        maxLength={maxLength}
+      />
+    </View>
+  );
 };
 
 

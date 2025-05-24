@@ -117,4 +117,17 @@ export const updateProfileImage = async (formData: FormData) => {
     console.error("Error uploading profile image:", err);
     throw err;
   }
-}
+};
+
+export const verifyEmail = async (email: string, code: string) => {
+  try {
+    const response = await axios.post(`${API}/user/requestVerificationCode`, { email, code });
+    if (response.status !== 200) {
+      throw new Error("Email verification failed");
+    }
+    return response.data;
+  } catch (err) {
+    console.error("Error verifying email:", err);
+    throw err;
+  }
+};

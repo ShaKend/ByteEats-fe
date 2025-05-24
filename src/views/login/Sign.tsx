@@ -18,11 +18,10 @@ type RouteParams = {
 };
 
 type RootStackParamList = {
-    Home: undefined; // No parameters for Dashboard
-    Sign: { loginAction: string }; // Parameters for the Sign page
+    Home: undefined;
+    Sign: { loginAction: string };
+    Verification: undefined;
 };
-
-type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Sign'>;
 
 type User = {
     email: string;
@@ -33,40 +32,30 @@ type User = {
 function Sign(){
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
-    const navigation = useNavigation<SignScreenNavigationProp>();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Sign'>>();
 
     const [action, setAction] = useState(loginAction);
     const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
 
-    const handleCreateUser = async() => {
-        try{
-            await createUser(user?.email, "manual", user?.username, user?.password);
-            await handleLogin();
-            navigation.navigate('Home');
-        }catch(err){
+    const handleCreateUser = async () => {
+        try {
+            navigation.navigate('Verification');
+        } catch (err) {
             console.error("Error: " + err);
         }
     };
 
-    const handleLogin = async() => {
-        try{
-            console.log("email: " + user?.email);
-            console.log("password: " + user?.password);
+    const handleLogin = async () => {
+        try {
             const response = await login(user?.email, user?.password);
-
             const token = (response as any).token;
-            console.log("Token: " + token);
-            
-
             if (token) {
                 await AsyncStorage.setItem('token', token);
-                
                 navigation.navigate('Home');
-                console.log("Login success!");
             } else {
                 console.error("Error: Token is undefined. Login failed.");
             }
-        }catch(err){
+        } catch (err) {
             console.error("Error: " + err);
         }
     };
@@ -128,9 +117,7 @@ function Sign(){
                     text="Continue" 
                     styleButton={styles.btn} 
                     styleText={styles.btnText} 
-                    authprovider="manual"
-                    loginAction={loginAction}
-                    onPress={() => {loginAction == 'SignUp' ? handleCreateUser() : handleLogin()}}
+                    onPress={loginAction === 'SignUp' ? handleCreateUser : handleLogin}
                 />
                 
                 <DividerMedia></DividerMedia>
@@ -140,8 +127,6 @@ function Sign(){
                     text="Continue with Google" 
                     styleButton={styles.medsos} 
                     styleText={styles.medsosText} 
-                    authprovider="google"
-                    loginAction={action}
                 />
             </View>
 
