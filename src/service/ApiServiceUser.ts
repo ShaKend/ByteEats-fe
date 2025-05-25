@@ -29,10 +29,11 @@ export const login = async (email?: string, password?: string) => {
 };
 
 export const createUser = async (
-  email?: string,
-  authprovider?: string,
+  email: string,
+  authprovider: string,
+  password: string,
+  code: string,
   username?: string,
-  password?: string,
   profilepicture?: string
 ) => {
   if (!profilepicture) profilepicture = "profile.png";
@@ -41,8 +42,9 @@ export const createUser = async (
     const response = await axios.post(`${API}/api/user/createUser`, {
       email,
       authprovider,
-      username,
       password,
+      code,
+      username,
       profilepicture,
     });
     if (response.status !== 200) {
@@ -119,9 +121,9 @@ export const updateProfileImage = async (formData: FormData) => {
   }
 };
 
-export const verifyEmail = async (email: string, code: string) => {
+export const verifyEmail = async (email: string) => {
   try {
-    const response = await axios.post(`${API}/user/requestVerificationCode`, { email, code });
+    const response = await axios.post(`${API}/api/user/requestVerificationCode`, { email });
     if (response.status !== 200) {
       throw new Error("Email verification failed");
     }

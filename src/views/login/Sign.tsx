@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, StyleSheet, TextInput } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,7 +11,7 @@ import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
 
-import { createUser, login } from "../../service/ApiServiceUser";
+import { verifyEmail, login } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
@@ -20,7 +20,10 @@ type RouteParams = {
 type RootStackParamList = {
     Home: undefined;
     Sign: { loginAction: string };
-    Verification: undefined;
+    Verification: {
+        email: string;
+        username?: string;
+        password: string;};
 };
 
 type User = {
@@ -36,16 +39,26 @@ function Sign(){
 
     const [action, setAction] = useState(loginAction);
     const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
+    const [loading, setLoading] = useState(false);
 
     const handleCreateUser = async () => {
+        setLoading(true);
         try {
-            navigation.navigate('Verification');
+            await verifyEmail(user?.email);
+            navigation.navigate('Verification', {
+                email: user.email,
+                username: user.username,
+                password: user.password,
+            });
         } catch (err) {
             console.error("Error: " + err);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleLogin = async () => {
+        setLoading(true);
         try {
             const response = await login(user?.email, user?.password);
             const token = (response as any).token;
@@ -57,6 +70,8 @@ function Sign(){
             }
         } catch (err) {
             console.error("Error: " + err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -76,7 +91,11 @@ function Sign(){
 
     return (
         <SafeAreaView style={styles.container}>
-
+            {loading && (
+                <View style={styles.loading}>
+                    <ActivityIndicator size="large" color={Color.darkPurple} />
+                </View>
+            )}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>
                     {splitCamelCase(loginAction)}
@@ -231,6 +250,19 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: 'center'
     },
+
+    //loading
+    loading: {
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(255,255,255,0.5)', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        zIndex: 10
+    }
 });
 
 export default Sign;

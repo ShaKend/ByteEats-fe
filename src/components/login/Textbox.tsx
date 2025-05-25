@@ -9,9 +9,11 @@ interface TextboxProps{
     iconName?: string;
     placeholder: string;
     onChangeText?: (text: string) => void;
+    keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; 
+    maxLength?: number
 }
 
-const Textbox: React.FC<TextboxProps & { keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; maxLength?: number }> = ({
+const Textbox: React.FC<TextboxProps> = ({
   styleTextbox,
   styleTextInput,
   iconName,

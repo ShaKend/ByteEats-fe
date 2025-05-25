@@ -37,8 +37,8 @@ function Login(){
                         text="Sign Up"
                         styleButton={styles.signUp}
                         styleText={styles.btnTextSignUp}
-                        //onPress={() => navigation.navigate('Sign', { loginAction: 'SignUp' })}
-                        onPress={() => navigation.navigate("Verification")}
+                        onPress={() => navigation.navigate('Sign', { loginAction: 'SignUp' })}
+                        // onPress={() => navigation.navigate("Verification")}
                     />
                     <SignButton
                         text="Sign in"

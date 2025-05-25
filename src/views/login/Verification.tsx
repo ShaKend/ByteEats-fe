@@ -3,10 +3,11 @@ import { StyleSheet, SafeAreaView, View, Text, TouchableOpacity } from "react-na
 import { Color } from "styles/Color";
 import Textbox from "components/login/Textbox";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useState } from "react";
-
+import { createUser, login } from "service/ApiServiceUser";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type RootStackParamList = {
     Home: undefined;
@@ -14,10 +15,27 @@ type RootStackParamList = {
 
 function Verification() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const route = useRoute();
+    const { email, username, password } = route.params as { email: string; username: string; password: string };
     const [verificationCode, setVerificationCode] = useState('');
 
-    const handleVerificationCodeChange = () => {
-        console.log("code: " + verificationCode);
+    const handleVerificationCodeChange = async () => {
+        console.log("Code:", verificationCode);
+        try {
+            await createUser(email, "manual", password, verificationCode, username );
+            // After successful registration, log the user in
+            const response = await login(email, password);
+            const token = (response as any).token;
+            if (token) {
+                await AsyncStorage.setItem('token', token);
+                navigation.navigate('Home');
+            } else {
+                console.error("Error: Token is undefined. Login after registration failed.");
+            }
+        } catch (err) {
+            // Handle error
+            console.error("Error creating user or logging in:", err);            
+        }
     };
 
     return (
