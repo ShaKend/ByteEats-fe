@@ -219,8 +219,6 @@ function Profile() {
         text="Sign Out"
         styleButton={styles.btn}
         styleText={styles.text}
-        loginAction="SignIn"
-        authprovider="sign"
         onPress={handleLogout}
       />
 

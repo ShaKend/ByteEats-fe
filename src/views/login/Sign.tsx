@@ -1,67 +1,148 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextInput, Button } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Color } from "../../styles/Color";
-import SignHeader from "../../components/login/SignHeader";
 import SignButton from "../../components/login/SignButton";
 import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
 
-import { createUser, login } from "../../service/ApiServiceUser";
+import { verifyEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
 };
 
 type RootStackParamList = {
-    Home: undefined; // No parameters for Dashboard
-    Sign: { loginAction: string }; // Parameters for the Sign page
+    Home: undefined;
+    Sign: { loginAction: string };
+    Verification: {
+        email: string;
+        username?: string;
+        password: string;};
 };
 
-type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Sign'>;
+type User = {
+    email: string;
+    password: string;
+    username?: string;
+};
 
 function Sign(){
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
-    const navigation = useNavigation<SignScreenNavigationProp>();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Sign'>>();
 
     const [action, setAction] = useState(loginAction);
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
+    const [loading, setLoading] = useState(false);
+    const [formErrors, setFormErrors] = useState<{ email?: string; username?: string; password?: string }>({});
 
-    const handleCreateUser = async() => {
-        try{
-            await createUser(email, "manual", username, password);
-            await handleLogin();
-            navigation.navigate('Home');
-        }catch(err){
-            console.error("Error: " + err);
+    const inputValidation = () => {
+        const errors: { email?: string; username?: string; password?: string } = {};
+        
+        // Username validation (only for SignUp)
+        if (action === "SignUp") {
+            if (!user.username || user.username.trim() === "") {
+                errors.username = "Username is required.";
+            } else if (user.username.length < 2) {
+                errors.username = "Username must be at least 2 characters.";
+            }
         }
-    }
 
-    const handleLogin = async() => {
-        try{
-            const response = await login(email, password);
+        // Email validation
+        if (!user.email || user.email.trim() === "") {
+            errors.email = "Email is required.";
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(user.email)) {
+                errors.email = "Please enter a valid email address.";
+            }
+        }
 
+        // Password validation
+        if (!user.password || user.password.trim() === "") {
+            errors.password = "Password is required.";
+        } else if (user.password.length < 5) {
+            errors.password = "Password must be at least 5 characters.";
+        }
+
+        return errors;
+    };
+
+    const isEmailExists = async () => {
+        try {
+            const response = await getUserByEmail(user?.email);
+            if (response && Object.keys(response).length > 0) {
+                return "Email already exists.";
+            }
+            return false;
+        } catch (error: any) {
+            // If backend returns 404, treat as 'email does not exist' (OK for registration)
+            if (error.response && error.response.status === 404) {
+                return false;
+            }
+            console.error("Error checking email existence:", error);
+            return false;
+        }
+    };
+
+    const handleCreateUser = async () => {
+        setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
+        // Only check for email existence if no other errors
+        const emailExists = await isEmailExists();
+        if (emailExists) {
+            setFormErrors({ email: emailExists as string });
+            setLoading(false);
+            return;
+        }
+        try {
+            await verifyEmail(user?.email);
+            navigation.navigate('Verification', {
+                email: user.email,
+                username: user.username,
+                password: user.password,
+            });
+        } catch (err) {
+            console.error("Error: " + err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogin = async () => {
+        setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
+        try {
+            const response = await login(user?.email, user?.password);
             const token = (response as any).token;
-
             if (token) {
                 await AsyncStorage.setItem('token', token);
                 navigation.navigate('Home');
-                console.log("Login success!");
             } else {
                 console.error("Error: Token is undefined. Login failed.");
             }
-        }catch(err){
+        } catch (err) {
             console.error("Error: " + err);
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     const splitCamelCase = (str: string) => {
         return str.replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -79,14 +160,11 @@ function Sign(){
 
     return (
         <SafeAreaView style={styles.container}>
-
-            {/* <SignHeader
-                title={splitCamelCase(loginAction)}
-                detail={detailText}
-                styleHeader={styles.header}
-            ></SignHeader> */}
-
-
+            {loading && (
+                <View style={styles.loading}>
+                    <ActivityIndicator size="large" color={Color.darkPurple} />
+                </View>
+            )}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>
                     {splitCamelCase(loginAction)}
@@ -96,73 +174,53 @@ function Sign(){
                 </Text>
             </View>
 
-
             <View style={styles.content}>
-
-
-                {/* {loginAction == "SignIn" ? <View></View> :
-                    <Textbox
-                        placeholder="Username" 
-                        iconName="person" 
-                        styleTextbox={styles.firstTextbox}
-                        // onChangeText={setUsername}
-                    >
-                    </Textbox>
-                } */}
-
-                {loginAction == "SignIn" ? <View></View> :                
+                {loginAction == "SignIn" ? <View></View> :
                     <View style={[styles.firstTextbox, styles.textInputContainer]}>
                         <Icon name={"person"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                         <TextInput
                         placeholder={"Username"}
                         placeholderTextColor="gray"
-                        onChangeText={setUsername}
                         style={styles.textInput}
+                        onChangeText={(value) => {setUser({ ...user, username: value })}}
                         />
                     </View>
                 }
+                {formErrors.username && (
+                    <Text style={styles.errorText}>{formErrors.username}</Text>
+                )}
 
-                
-                <View style={loginAction == "SignIn" ? [styles.firstTextbox, styles.textInputContainer] : [styles.secondTextbox, styles.textInputContainer]}>
-                    <Icon name={"alternate-email"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                    placeholder={"Email"}
-                    placeholderTextColor="gray"
-                    onChangeText={setEmail}
-                    style={styles.textInput}
-                    />
-                </View>
+                <Textbox
+                    placeholder="Email"
+                    iconName="alternate-email"
+                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox}
+                    onChangeText={(value) => {setUser({ ...user, email: value })}}
+                />
+                {formErrors.email && (
+                    <Text style={styles.errorText}>{formErrors.email}</Text>
+                )}
 
-                <View style={[styles.pass, styles.textInputContainer]}>
-                    <Icon name={"visibility"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                    placeholder={"Password"}
-                    placeholderTextColor="gray"
-                    onChangeText={setPassword}
-                    style={styles.textInput}
-                    />
-                </View>
+                <Textbox
+                    placeholder="Password"
+                    iconName="visibility"
+                    styleTextbox={styles.pass}
+                    onChangeText={(value) => {setUser({ ...user, password: value })}}
+                />
+                {formErrors.password && (
+                    <Text style={styles.errorText}>{formErrors.password}</Text>
+                )}
+                { loginAction === 'SignIn' &&
+                    <Text style={styles.forgotPassword}>
+                        Forgot Password?
+                    </Text>
+                }
 
-                {/* <Textbox 
-                    placeholder="Email" 
-                    iconName="alternate-email" 
-                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox} 
-                    // onChangeText={setEmail}
-                /> */}
-                {/* <Textbox 
-                    placeholder="Password" 
-                    iconName="visibility" 
-                    styleTextbox={styles.pass} 
-                    // onChangeText={setPassword}    
-                /> */}
 
-                <SignButton 
-                    text="Continue" 
-                    styleButton={styles.btn} 
-                    styleText={styles.btnText} 
-                    authprovider="manual"
-                    loginAction={loginAction}
-                    onPress={() => {loginAction == 'SignUp' ? handleCreateUser() : handleLogin()}}
+                <SignButton
+                    text="Continue"
+                    styleButton={styles.btn}
+                    styleText={styles.btnText}
+                    onPress={loginAction === 'SignUp' ? handleCreateUser : handleLogin}
                 />
                 
                 <DividerMedia></DividerMedia>
@@ -172,8 +230,6 @@ function Sign(){
                     text="Continue with Google" 
                     styleButton={styles.medsos} 
                     styleText={styles.medsosText} 
-                    authprovider="google"
-                    loginAction={action}
                 />
             </View>
 
@@ -233,13 +289,13 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     firstTextbox: {
-        marginTop: 40
+        marginTop: 20
     },
     secondTextbox: {
-        marginTop: 20
+        marginTop: 25
     },
     pass: {
-        marginTop: 20
+        marginTop: 25
     },
     btn: {
         backgroundColor: Color.darkPurple,
@@ -261,6 +317,20 @@ const styles = StyleSheet.create({
         fontWeight: 700,
     },
 
+    //validation error
+    errorText: {
+        color: Color.error,
+        marginLeft: 5,
+    },
+
+    //forgot password
+    forgotPassword: {
+        color: Color.darkPurple,
+        fontSize: 14,
+        textAlign: 'right',
+        textDecorationLine: 'underline',
+    },
+
     //footer
     footerContent: {
         position: 'relative',
@@ -278,6 +348,19 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: 'center'
     },
+
+    //loading
+    loading: {
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(255,255,255,0.5)', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        zIndex: 10
+    }
 });
 
 export default Sign;

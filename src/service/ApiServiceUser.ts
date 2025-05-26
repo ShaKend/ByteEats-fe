@@ -15,6 +15,19 @@ export const getUserById = async (userId: string) => {
   }
 };
 
+export const getUserByEmail = async (email: string) => {
+  try {
+    const response = await axios.get(`${API}/api/user/getUserByEmail/${email}`);
+    // if (response.status !== 200) {
+    //   throw new Error("Failed to fetch user by email");
+    // }
+    return response.data;
+  } catch (err) {
+    console.error("Error fetching user by email:", err);
+    throw err;
+  }
+}
+
 export const login = async (email?: string, password?: string) => {
   try {
     const response = await axios.post(`${API}/api/login`, { email, password });
@@ -29,10 +42,11 @@ export const login = async (email?: string, password?: string) => {
 };
 
 export const createUser = async (
-  email?: string,
-  authprovider?: string,
+  email: string,
+  authprovider: string,
+  password: string,
+  code: string,
   username?: string,
-  password?: string,
   profilepicture?: string
 ) => {
   if (!profilepicture) profilepicture = "profile.png";
@@ -41,8 +55,9 @@ export const createUser = async (
     const response = await axios.post(`${API}/api/user/createUser`, {
       email,
       authprovider,
-      username,
       password,
+      code,
+      username,
       profilepicture,
     });
     if (response.status !== 200) {
@@ -117,4 +132,17 @@ export const updateProfileImage = async (formData: FormData) => {
     console.error("Error uploading profile image:", err);
     throw err;
   }
-}
+};
+
+export const verifyEmail = async (email: string) => {
+  try {
+    const response = await axios.post(`${API}/api/user/requestVerificationCode`, { email });
+    if (response.status !== 200) {
+      throw new Error("Email verification failed");
+    }
+    return response.data;
+  } catch (err) {
+    console.error("Error verifying email:", err);
+    throw err;
+  }
+};
