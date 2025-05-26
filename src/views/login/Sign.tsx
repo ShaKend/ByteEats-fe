@@ -11,7 +11,7 @@ import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
 
-import { verifyEmail, login } from "../../service/ApiServiceUser";
+import { verifyEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
@@ -40,9 +40,72 @@ function Sign(){
     const [action, setAction] = useState(loginAction);
     const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
     const [loading, setLoading] = useState(false);
+    const [formErrors, setFormErrors] = useState<{ email?: string; username?: string; password?: string }>({});
+
+    const inputValidation = () => {
+        const errors: { email?: string; username?: string; password?: string } = {};
+        
+        // Username validation (only for SignUp)
+        if (action === "SignUp") {
+            if (!user.username || user.username.trim() === "") {
+                errors.username = "Username is required.";
+            } else if (user.username.length < 2) {
+                errors.username = "Username must be at least 2 characters.";
+            }
+        }
+
+        // Email validation
+        if (!user.email || user.email.trim() === "") {
+            errors.email = "Email is required.";
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(user.email)) {
+                errors.email = "Please enter a valid email address.";
+            }
+        }
+
+        // Password validation
+        if (!user.password || user.password.trim() === "") {
+            errors.password = "Password is required.";
+        } else if (user.password.length < 5) {
+            errors.password = "Password must be at least 5 characters.";
+        }
+
+        return errors;
+    };
+
+    const isEmailExists = async () => {
+        try {
+            const response = await getUserByEmail(user?.email);
+            if (response && Object.keys(response).length > 0) {
+                return "Email already exists.";
+            }
+            return false;
+        } catch (error: any) {
+            // If backend returns 404, treat as 'email does not exist' (OK for registration)
+            if (error.response && error.response.status === 404) {
+                return false;
+            }
+            console.error("Error checking email existence:", error);
+            return false;
+        }
+    };
 
     const handleCreateUser = async () => {
         setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
+        // Only check for email existence if no other errors
+        const emailExists = await isEmailExists();
+        if (emailExists) {
+            setFormErrors({ email: emailExists as string });
+            setLoading(false);
+            return;
+        }
         try {
             await verifyEmail(user?.email);
             navigation.navigate('Verification', {
@@ -59,6 +122,12 @@ function Sign(){
 
     const handleLogin = async () => {
         setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
         try {
             const response = await login(user?.email, user?.password);
             const token = (response as any).token;
@@ -105,37 +174,52 @@ function Sign(){
                 </Text>
             </View>
 
-
             <View style={styles.content}>
-                {loginAction == "SignIn" ? <View></View> :                
+                {loginAction == "SignIn" ? <View></View> :
                     <View style={[styles.firstTextbox, styles.textInputContainer]}>
                         <Icon name={"person"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                         <TextInput
                         placeholder={"Username"}
                         placeholderTextColor="gray"
                         style={styles.textInput}
-                        onChangeText={(value) => {setUser({ ...user, username: value })}}                        
+                        onChangeText={(value) => {setUser({ ...user, username: value })}}
                         />
                     </View>
                 }
+                {formErrors.username && (
+                    <Text style={styles.errorText}>{formErrors.username}</Text>
+                )}
 
-                <Textbox 
-                    placeholder="Email" 
-                    iconName="alternate-email" 
-                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox} 
+                <Textbox
+                    placeholder="Email"
+                    iconName="alternate-email"
+                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox}
                     onChangeText={(value) => {setUser({ ...user, email: value })}}
                 />
-                <Textbox 
-                    placeholder="Password" 
-                    iconName="visibility" 
-                    styleTextbox={styles.pass} 
-                    onChangeText={(value) => {setUser({ ...user, password: value })}}                
-                />
+                {formErrors.email && (
+                    <Text style={styles.errorText}>{formErrors.email}</Text>
+                )}
 
-                <SignButton 
-                    text="Continue" 
-                    styleButton={styles.btn} 
-                    styleText={styles.btnText} 
+                <Textbox
+                    placeholder="Password"
+                    iconName="visibility"
+                    styleTextbox={styles.pass}
+                    onChangeText={(value) => {setUser({ ...user, password: value })}}
+                />
+                {formErrors.password && (
+                    <Text style={styles.errorText}>{formErrors.password}</Text>
+                )}
+                { loginAction === 'SignIn' &&
+                    <Text style={styles.forgotPassword}>
+                        Forgot Password?
+                    </Text>
+                }
+
+
+                <SignButton
+                    text="Continue"
+                    styleButton={styles.btn}
+                    styleText={styles.btnText}
                     onPress={loginAction === 'SignUp' ? handleCreateUser : handleLogin}
                 />
                 
@@ -205,13 +289,13 @@ const styles = StyleSheet.create({
         marginTop: 20,
     },
     firstTextbox: {
-        marginTop: 40
+        marginTop: 20
     },
     secondTextbox: {
-        marginTop: 20
+        marginTop: 25
     },
     pass: {
-        marginTop: 20
+        marginTop: 25
     },
     btn: {
         backgroundColor: Color.darkPurple,
@@ -231,6 +315,20 @@ const styles = StyleSheet.create({
         color: Color.darkPurple,
         fontSize: 16,
         fontWeight: 700,
+    },
+
+    //validation error
+    errorText: {
+        color: Color.error,
+        marginLeft: 5,
+    },
+
+    //forgot password
+    forgotPassword: {
+        color: Color.darkPurple,
+        fontSize: 14,
+        textAlign: 'right',
+        textDecorationLine: 'underline',
     },
 
     //footer

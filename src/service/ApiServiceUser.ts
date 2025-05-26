@@ -15,6 +15,19 @@ export const getUserById = async (userId: string) => {
   }
 };
 
+export const getUserByEmail = async (email: string) => {
+  try {
+    const response = await axios.get(`${API}/api/user/getUserByEmail/${email}`);
+    // if (response.status !== 200) {
+    //   throw new Error("Failed to fetch user by email");
+    // }
+    return response.data;
+  } catch (err) {
+    console.error("Error fetching user by email:", err);
+    throw err;
+  }
+}
+
 export const login = async (email?: string, password?: string) => {
   try {
     const response = await axios.post(`${API}/api/login`, { email, password });
