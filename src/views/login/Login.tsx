@@ -6,12 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-    Home: undefined;
-    Sign: { loginAction: string };
-    Verification: undefined;
-};
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 // type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 

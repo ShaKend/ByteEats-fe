@@ -8,10 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useState } from "react";
 import { createUser, login } from "service/ApiServiceUser";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-type RootStackParamList = {
-    Home: undefined;
-};
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 function Verification() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

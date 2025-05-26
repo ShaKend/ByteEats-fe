@@ -17,11 +17,7 @@ import { API } from "../../service/ApiService"
 import Textbox from "../../components/profile/Textbox";
 import EditBtn from "../../components/profile/EditBtn";
 import { updateProfileImage, getUserById } from "../../service/ApiServiceUser";
-
-type RootStackParamList = {
-  Home: undefined;
-  Sign: { loginAction: string };
-};
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 type SignScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,

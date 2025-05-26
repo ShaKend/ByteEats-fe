@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,20 +10,12 @@ import SignButton from "../../components/login/SignButton";
 import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 import { verifyEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
-};
-
-type RootStackParamList = {
-    Home: undefined;
-    Sign: { loginAction: string };
-    Verification: {
-        email: string;
-        username?: string;
-        password: string;};
 };
 
 type User = {
@@ -210,9 +202,11 @@ function Sign(){
                     <Text style={styles.errorText}>{formErrors.password}</Text>
                 )}
                 { loginAction === 'SignIn' &&
-                    <Text style={styles.forgotPassword}>
-                        Forgot Password?
-                    </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+                        <Text style={styles.forgotPassword}>
+                            Forgot Password?
+                        </Text>
+                    </TouchableOpacity>
                 }
 
 
