@@ -6,19 +6,22 @@ import Login from "../views/login/Login";
 import Sign from "../views/login/Sign";
 import Home from "../views/home/Home";
 import BottomTabs from "./BottomTabs";
-import Verification from "views/login/Verification";
+import OnBoardingA from "views/OnBoarding/OnBoardingA";
+import OnBoardingB from "views/OnBoarding/OnBoardingB";
 
 const Stack = createStackNavigator();
 
 export default function NavigationStack(){
     return(
         <NavigationContainer>
-            <Stack.Navigator initialRouteName="Login" screenOptions={{headerShown: false}}>
-                <Stack.Screen name="Login" component={Login} />
-                <Stack.Screen name="Sign" component={Sign} />
-                <Stack.Screen name="Verification" component={Verification} />
-                <Stack.Screen name="Home" component={BottomTabs} />
-            </Stack.Navigator>
+            <Stack.Navigator initialRouteName="OnBoardingA" screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="OnBoardingA" component={OnBoardingA} />
+            <Stack.Screen name="OnBoardingB" component={OnBoardingB} />
+            <Stack.Screen name="Login" component={Login} />
+            <Stack.Screen name="Sign" component={Sign} />
+            <Stack.Screen name="Home" component={BottomTabs} />
+        </Stack.Navigator>
+
         </NavigationContainer>
     );
 }
