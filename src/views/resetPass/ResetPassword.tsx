@@ -1,6 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import {Text, View, StyleSheet, SafeAreaView} from "react-native";
 import { Color } from "styles/Color";
+import { useRoute } from "@react-navigation/native";
+
+type RouteParams = {
+  action: 'reset' | 'change';
+  email?: string;
+};
 
 function ResetPassword() {
   return (

@@ -175,14 +175,14 @@ function Profile() {
             isDisabled={isEditing}
             label="Age"
           />
-          {!isEditing ? "" : 
+          {/* {!isEditing ? "" : 
             <Textbox
               value={""}
               onChange={(value) => setUser(user ? { ...user, password: value } : null)}
               isDisabled={isEditing}
               label="Password"
             />
-          }
+          } */}
           <View style={styles.ddContainer}>
             <Text style={styles.ddText}>Gender</Text>
             <View
@@ -205,6 +205,16 @@ function Profile() {
             </View>
           </View>
         </View>
+
+        {/* change password */}
+        {isEditing && (
+          <TouchableOpacity onPress={() => navigation.navigate('Verification', { email: user?.email ?? '', username: '', password: '', action: 'change' })}>
+            <Text style={styles.resetPassword}>
+              Reset Password
+            </Text>
+          </TouchableOpacity>
+          )  
+        }
 
         <EditBtn
           onClick={() => handleEdit()}
@@ -317,6 +327,14 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: Color.white,
   },
+
+  // reset password
+  resetPassword: {
+    marginTop: 2,
+    marginLeft: 3,
+    textDecorationLine: 'underline',
+    color: Color.darkPurple,  
+  }
 });
 
 export default Profile;

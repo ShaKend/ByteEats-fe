@@ -12,7 +12,7 @@ import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
 import { RootStackParamList } from "navigations/RootStackParamList";
 
-import { verifyEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
+import { sendCodeToEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
@@ -99,11 +99,12 @@ function Sign(){
             return;
         }
         try {
-            await verifyEmail(user?.email);
+            await sendCodeToEmail(user?.email);
             navigation.navigate('Verification', {
                 email: user.email,
                 username: user.username,
                 password: user.password,
+                action: 'register'
             });
         } catch (err) {
             console.error("Error: " + err);
@@ -202,7 +203,7 @@ function Sign(){
                     <Text style={styles.errorText}>{formErrors.password}</Text>
                 )}
                 { loginAction === 'SignIn' &&
-                    <TouchableOpacity onPress={() => navigation.navigate('ResetPassword')}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Verification', { email: user?.email ?? '', username: '', password: '', action: 'forgot' })}>
                         <Text style={styles.forgotPassword}>
                             Forgot Password?
                         </Text>
