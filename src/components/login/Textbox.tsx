@@ -11,6 +11,7 @@ interface TextboxProps{
     onChangeText?: (text: string) => void;
     keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; 
     maxLength?: number
+    value?: string | number; // Optional prop for controlled input
 }
 
 const Textbox: React.FC<TextboxProps> = ({
@@ -20,7 +21,8 @@ const Textbox: React.FC<TextboxProps> = ({
   placeholder,
   onChangeText,
   keyboardType = "default",
-  maxLength
+  maxLength,
+  value
 }) => {
   return (
     <View style={[styles.container, styleTextbox]}>
@@ -34,6 +36,7 @@ const Textbox: React.FC<TextboxProps> = ({
         onChangeText={onChangeText}
         keyboardType={keyboardType}
         maxLength={maxLength}
+        value={value !== undefined ? String(value) : undefined} // Ensure value is always a string
       />
     </View>
   );

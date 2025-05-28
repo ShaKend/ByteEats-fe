@@ -3,8 +3,12 @@ export type RootStackParamList = {
     Sign: { loginAction: string };
     Verification: {
         email: string;
-        username?: string;
         password: string;
+        username?: string;
+        action: 'forgot' | 'change' | 'register';
     };
-    ResetPassword: undefined;
+    ResetPassword: {
+        action: 'reset' | 'change';
+        email?: string;
+    };
 };
