@@ -134,15 +134,36 @@ export const updateProfileImage = async (formData: FormData) => {
   }
 };
 
-export const verifyEmail = async (email: string) => {
+export const sendCodeToEmail = async (email: string) => {
   try {
     const response = await axios.post(`${API}/api/user/requestVerificationCode`, { email });
-    if (response.status !== 200) {
-      throw new Error("Email verification failed");
-    }
     return response.data;
   } catch (err) {
     console.error("Error verifying email:", err);
+    throw err;
+  }
+};
+
+export const verifyCode = async (email: string, code: string) => {
+  try {
+    const response = await axios.post(`${API}/api/user/validateVerificationCode`, { email, code });
+    return response.data;
+  } catch (err) {
+    console.error("Error verifying code:", err);
+    throw err;
+  }
+}
+
+export const changePassword = async (email: string, code: string, newPassword: string) => {
+  try {
+    const response = await axios.put(`${API}/api/user/changePassword`, {
+      email,
+      code,
+      newPassword,
+    });
+    return response.data;
+  } catch (err) {
+    console.error("Error resetting password:", err);
     throw err;
   }
 };
