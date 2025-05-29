@@ -1,4 +1,4 @@
-import { View, SafeAreaView, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import { View, SafeAreaView, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -16,7 +16,7 @@ import { getProfile } from "../../service/ApiServiceUser";
 import { API } from "../../service/ApiService"
 import Textbox from "../../components/profile/Textbox";
 import EditBtn from "../../components/profile/EditBtn";
-import { updateProfileImage, getUserById } from "../../service/ApiServiceUser";
+import { updateProfileImage, sendCodeToEmail } from "../../service/ApiServiceUser";
 import { RootStackParamList } from "navigations/RootStackParamList";
 
 type SignScreenNavigationProp = NativeStackNavigationProp<
@@ -39,6 +39,7 @@ function Profile() {
   const [user, setUser] = useState<User | null>(null);
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   //const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
   const profileUrl = localImageUri
@@ -53,7 +54,7 @@ function Profile() {
       try {
         if (user) {
           // If new image is selected (local file), upload it
-          if (user.profilepicture && user.profilepicture.startsWith("file://")) {
+          if (user.profilepicture && user.profilepicture.startsWith("file:///")) {
             const formData = new FormData();
             formData.append("profilepicture", {
               uri: user.profilepicture,
@@ -62,7 +63,8 @@ function Profile() {
             } as any);
           
             // Just upload, don't care about response filename
-            await updateProfileImage(formData);
+              const uploadResponse = await updateProfileImage(formData);
+              console.log("Upload response:", uploadResponse);
           }
         
           // Update other user details (assuming backend uses JWT to identify user)
@@ -78,14 +80,37 @@ function Profile() {
           setUser(response.data);
           setLocalImageUri(null);          
         }
-      } catch (err) {
-        console.error("Error saving profile:", err);
+      } catch (err: any) {
+        //console.error("Error saving profile:", err);
+        const backendMsg = err.response?.data?.message || err.message || "Unknown error";
+        console.log(backendMsg);
+        throw new Error(backendMsg);
       }
     }
   
     setIsEditing(!isEditing);
   };
 
+  const handleChangePw = async () => {
+    if (user) {
+      setIsLoading(true);
+      try {
+        // Send code to user's email for verification
+        await sendCodeToEmail(user.email);
+        // Navigate to verification screen with user details
+        navigation.navigate('Verification', { 
+          email: user.email, 
+          username: user.username, 
+          password: user.password || '', 
+          action: 'change' 
+        });
+      } catch (err) {
+        console.error("Error sending code to email:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }
 
   const handleSelectImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -170,19 +195,13 @@ function Profile() {
           />
 
           <Textbox
-            value={user?.age?.toString() || '-'}
+            value={user?.age?.toString()}
             onChange={(value) => setUser(user ? { ...user, age: value } : null)}
             isDisabled={isEditing}
             label="Age"
+            maxLength={3}
+            keyboardType="numeric"
           />
-          {/* {!isEditing ? "" : 
-            <Textbox
-              value={""}
-              onChange={(value) => setUser(user ? { ...user, password: value } : null)}
-              isDisabled={isEditing}
-              label="Password"
-            />
-          } */}
           <View style={styles.ddContainer}>
             <Text style={styles.ddText}>Gender</Text>
             <View
@@ -204,22 +223,25 @@ function Profile() {
               </Picker>
             </View>
           </View>
-        </View>
-
-        {/* change password */}
-        {isEditing && (
-          <TouchableOpacity onPress={() => navigation.navigate('Verification', { email: user?.email ?? '', username: '', password: '', action: 'change' })}>
-            <Text style={styles.resetPassword}>
-              Reset Password
-            </Text>
-          </TouchableOpacity>
-          )  
-        }
-
         <EditBtn
           onClick={() => handleEdit()}
           text={isEditing ? "Save" : "Edit Profile"}
         />
+
+        <TouchableOpacity 
+          onPress={() => handleChangePw()}
+          style={styles.resetPassword}
+          disabled={isLoading}
+        >
+          <Text style={{color: Color.darkPurple, textDecorationLine: 'underline'}}>
+            Reset Password
+          </Text>
+        </TouchableOpacity>
+        {isLoading && (
+          <ActivityIndicator size="large" color={Color.darkPurple} style={{ marginTop: 20 }} />
+        )}
+        </View>
+
 
       <SignButton
         text="Sign Out"
@@ -330,10 +352,10 @@ const styles = StyleSheet.create({
 
   // reset password
   resetPassword: {
-    marginTop: 2,
-    marginLeft: 3,
-    textDecorationLine: 'underline',
-    color: Color.darkPurple,  
+    marginTop: 10,
+    display: 'flex',
+    alignItems: 'flex-end',
+    marginRight: 40,
   }
 });
 
