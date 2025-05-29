@@ -1,14 +1,17 @@
 import React, { useEffect } from "react";
-import { StyleSheet, SafeAreaView, View, Text, TouchableOpacity } from "react-native";
+import { StyleSheet, SafeAreaView, View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { Color } from "styles/Color";
 import Textbox from "components/login/Textbox";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useState } from "react";
-import { createUser, login, getUserByEmail, changePassword, sendCodeToEmail, verifyCode } from "service/ApiServiceUser";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from "navigations/RootStackParamList";
+import { CommonActions } from "@react-navigation/native";
+
+import { createUser, login, getUserByEmail, changePassword, sendCodeToEmail, verifyCode } from "service/ApiServiceUser";
+import SignButton from "components/login/SignButton";
 
 // action (all these actions are done in the same page)
 // forgot: in verification page, ask for user email, then send a verification code to reset password
@@ -27,16 +30,14 @@ function Verification() {
     const { email, username, password, action } = route.params as VerifyParams;
     const [verificationCode, setVerificationCode] = useState('');
     const [isEnterEmail, setIsEnterEmail] = useState(true);
-    const [emailToReset, setEmailToReset] = useState('');
+    const [emailToReset, setEmailToReset] = useState(
+        action === 'change' && email ? email : ''
+    );
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isResetting, setIsResetting] = useState(false);
     const [newPassword, setNewPassword] = useState('');
-
-    useEffect(() => {
-        setVerificationCode('');
-        setEmailToReset('');
-    }, []);
+    const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
 
     const handleRegister = async () => {
         setError(null);
@@ -61,35 +62,29 @@ function Verification() {
         setError(null);
         if (isEnterEmail) {
             // If we are in the forgot password flow and the user has entered their email
-            setIsEnterEmail(false);
-                        
-            const response = await sendCodeToEmail(emailToReset);
-            // if ((response as any).status !== 200) {
-            //     setError("Failed to send verification code. Please try again.");
-            //     console.error("Error code:", (response as any).status);
-            //     return;
-            // }
-
-            const user = await getUserByEmail(emailToReset);
-            if (!user) {
-                setError("Email does not exist.");
-                return;
+            try {
+                await getUserByEmail(emailToReset);
+                // If no error, user exists, proceed
+                setIsEnterEmail(false);
+                await sendCodeToEmail(emailToReset);
+            } catch (err: any) {
+                // Pass backend error message up to the caller
+                const backendMsg = err.response?.data?.message || err.message || "Unknown error";
+                setError(backendMsg);
+                //throw new Error(backendMsg);
             }
             return;
         }
         // Step 1: Check if email exists
+        setIsLoading(true);
         try {
             // Step 2: Verify the code
             const isCodeValid = await verifyCode(emailToReset, verificationCode);
             if (!isCodeValid) {
                 setError("Invalid verification code. Please try again.");
+                setIsLoading(false);
                 return;
             }
-
-            // Step 3: Call changePassword with email, code, and new password
-            // await changePassword(emailToReset, verificationCode, password);
-            // setError(null);
-            // navigation.navigate('Sign', { loginAction: 'SignIn' });
             setIsResetting(true);
         } catch (err: any) {
             if (err.response && err.response.status === 404) {
@@ -98,25 +93,56 @@ function Verification() {
                 setError("Failed to reset password. Please check your code and try again.");
             }
             console.error("Error in forgot password flow:", err);
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleChangePw = async () => {
         setError(null);
+        setIsLoading(true);
         try {
-            // await changePassword(email, verificationCode, password);
-            // setError(null);
-            // navigation.navigate('Sign', { loginAction: 'SignIn' });
             const isCodeValid = await verifyCode(emailToReset, verificationCode);
             if (!isCodeValid) {
                 setError("Invalid verification code. Please try again.");
+                setIsLoading(false);
                 return;
             }
             setIsResetting(true);
         } catch (err) {
             setError("Failed to change password. Please check your code and try again.");
             console.error("Error changing password:", err);
+        } finally {
+            setIsLoading(false);
         }
+    };
+
+    const changePass = async () => {
+        setError(null);
+        
+        if (newPassword.length < 5) {
+            setError("Password must be at least 5 characters long.");
+            return;
+        }
+        if (newPassword !== newPasswordConfirm) {
+            setError("Passwords do not match. Please try again.");
+            return;
+        }
+        try {
+            //Call the changePassword API with the new password
+            await changePassword(emailToReset, verificationCode, newPassword);
+            setError(null);
+
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: 'Sign', params: { loginAction: 'SignIn' } }], // Or your login screen name
+              })
+            );            
+        } catch (err: any) {
+            setError(err.response?.data?.message || "Failed to change password. Please try again.");
+            console.error(err);
+        };
     };
 
     const handleAction = async () => {
@@ -159,17 +185,23 @@ function Verification() {
                     <View>
                         <Textbox
                             placeholder="Enter your new password"
-                            styleTextbox={{ marginTop: 20, width: 210 }}
+                            styleTextbox={{ marginTop: 20, width: 230 }}
                             onChangeText={(text) => setNewPassword(text)}
                             iconName="visibility"
-                            // secureTextEntry={true}
+                            secureTextEntry={true}
                         />
                         <Textbox
                             placeholder="Re-enter your new password"
-                            styleTextbox={{ marginTop: 20, width: 210 }}
-                            onChangeText={(text) => setNewPassword(text)}
+                            styleTextbox={{ marginTop: 20, width: 230 }}
+                            onChangeText={(text) => setNewPasswordConfirm(text)}
                             iconName="visibility"
-                            // secureTextEntry={true}
+                            secureTextEntry={true}
+                        />
+                        <SignButton
+                            text={action === 'forgot' ? "Reset Password" : "Change Password"}
+                            styleButton={styles.changePassBtn}
+                            styleText={styles.changePassText}
+                            onPress={() => changePass()}
                         />
                     </View>
                 ) : (
@@ -198,10 +230,14 @@ function Verification() {
                         <TouchableOpacity
                             style={styles.confirmBtn}
                             onPress={() => handleAction()}
+                            disabled={isLoading}
                         >
                             <Icon name="check" size={24} color={Color.white} />
                         </TouchableOpacity>
                     </View> 
+                )}
+                {isLoading && (
+                    <ActivityIndicator size="large" color={Color.darkPurple} style={{ marginTop: 20 }} />
                 )}
             </View>
         </SafeAreaView>
@@ -238,6 +274,17 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginLeft: 5
     },
+    changePassText: {
+        color: Color.darkPurple,
+        fontSize: 20,
+        fontWeight: 700,
+    },
+    changePassBtn: {
+        backgroundColor: 'transparent',
+        borderWidth: 1.4,
+        borderColor: Color.darkPurple,
+        marginTop: 18,
+    }
 });
 
 export default Verification;
