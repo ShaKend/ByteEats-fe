@@ -128,10 +128,19 @@ function Sign(){
                 await AsyncStorage.setItem('token', token);
                 navigation.navigate('Home');
             } else {
-                console.error("Error: Token is undefined. Login failed.");
+                setFormErrors({ password: 'Incorrect email or password.' });
             }
-        } catch (err) {
-            console.error("Error: " + err);
+        } catch (err: any) {
+            // Handle backend error messages
+            const backendMsg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+            // Try to distinguish between email not found and wrong password
+            if (backendMsg.toLowerCase().includes('not found')) {
+                setFormErrors({ email: 'Email does not exist.' });
+            } else if (backendMsg.toLowerCase().includes('password')) {
+                setFormErrors({ password: 'Incorrect password.' });
+            } else {
+                setFormErrors({ password: backendMsg });
+            }
         } finally {
             setLoading(false);
         }
@@ -188,6 +197,7 @@ function Sign(){
                     iconName="alternate-email"
                     styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox}
                     onChangeText={(value) => {setUser({ ...user, email: value })}}
+                    keyboardType="email-address"
                 />
                 {formErrors.email && (
                     <Text style={styles.errorText}>{formErrors.email}</Text>
@@ -198,6 +208,7 @@ function Sign(){
                     iconName="visibility"
                     styleTextbox={styles.pass}
                     onChangeText={(value) => {setUser({ ...user, password: value })}}
+                    secureTextEntry={true}
                 />
                 {formErrors.password && (
                     <Text style={styles.errorText}>{formErrors.password}</Text>
