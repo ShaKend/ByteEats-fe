@@ -12,6 +12,7 @@ interface TextboxProps{
     keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; 
     maxLength?: number
     value?: string | number; // Optional prop for controlled input
+    secureTextEntry?: boolean; // Optional prop for secure text entry
 }
 
 const Textbox: React.FC<TextboxProps> = ({
@@ -22,7 +23,8 @@ const Textbox: React.FC<TextboxProps> = ({
   onChangeText,
   keyboardType = "default",
   maxLength,
-  value
+  value,
+  secureTextEntry = false, // Default to false if not provided
 }) => {
   return (
     <View style={[styles.container, styleTextbox]}>
@@ -37,6 +39,7 @@ const Textbox: React.FC<TextboxProps> = ({
         keyboardType={keyboardType}
         maxLength={maxLength}
         value={value !== undefined ? String(value) : undefined} // Ensure value is always a string
+        secureTextEntry={secureTextEntry} // Use secureTextEntry prop
       />
     </View>
   );
