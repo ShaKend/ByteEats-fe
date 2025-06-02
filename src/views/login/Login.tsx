@@ -8,20 +8,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from "navigations/RootStackParamList";
 
-// type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-
 function Login(){
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    useEffect(() => {
-        const checkAuth = async () => {
-            const token = await AsyncStorage.getItem('token');
-            if (token) {
-                navigation.navigate('Home');
-            } 
-        };
-        checkAuth();
-    }, []);
-
 
     return(
         <SafeAreaView style={styles.container}>
