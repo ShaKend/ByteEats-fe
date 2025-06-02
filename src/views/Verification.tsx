@@ -130,6 +130,11 @@ function Verification() {
         }
         try {
             //Call the changePassword API with the new password
+            if (!emailToReset || !verificationCode || !newPassword) {
+                setError("Please fill in all fields.");
+                return;
+            }
+
             await changePassword(emailToReset, verificationCode, newPassword);
             setError(null);
 
