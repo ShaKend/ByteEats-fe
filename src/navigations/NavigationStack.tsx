@@ -6,6 +6,8 @@ import Login from "../views/login/Login";
 import Sign from "../views/login/Sign";
 import Home from "../views/home/Home";
 import BottomTabs from "./BottomTabs";
+import OnBoardingA from "views/OnBoarding/OnBoardingA";
+import OnBoardingB from "views/OnBoarding/OnBoardingB";
 import Verification from "views/Verification";
 import ResetPassword from "views/resetPass/ResetPassword";
 
@@ -18,7 +20,6 @@ export default function NavigationStack(){
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="Sign" component={Sign} />
                 <Stack.Screen name="Verification" component={Verification} />
-                <Stack.Screen name="ResetPassword" component={ResetPassword} />
                 <Stack.Screen name="Home" component={BottomTabs} />
             </Stack.Navigator>
         </NavigationContainer>
