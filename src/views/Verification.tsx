@@ -48,7 +48,13 @@ function Verification() {
             const token = (response as any).token;
             if (token) {
                 await AsyncStorage.setItem('token', token);
-                navigation.navigate('Home');
+
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{name: 'Home'}], // Or your login screen name
+                    })
+                );   
             } else {
                 setError("Error: Token is undefined. Login after registration failed.");
             }
