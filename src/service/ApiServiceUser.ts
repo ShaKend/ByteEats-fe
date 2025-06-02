@@ -65,12 +65,20 @@ export const updateUser = async (
   gender?: string,
   age?: number
 ) => {
+  const token = await AsyncStorage.getItem("token");
+  if (!token) {
+    throw new Error("Token not found in AsyncStorage");
+  }
   try {
     const response = await axios.put(`${API}/api/user/updateUser/${userId}`, {
       username,
       password,
       gender,
       age
+    }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     return response.data;
   } catch (err) {
