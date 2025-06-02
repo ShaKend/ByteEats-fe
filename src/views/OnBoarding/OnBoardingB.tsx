@@ -22,7 +22,7 @@ export default function OnBoardingB() {
 
       <TouchableOpacity
         style={styles.nextButton}
-        onPress={() => navigation.navigate("Home" as never)}
+        onPress={() => navigation.navigate("Login" as never)}
       >
         <Text style={styles.nextButtonText}>Start</Text>
       </TouchableOpacity>
