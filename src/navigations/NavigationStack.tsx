@@ -9,11 +9,15 @@ import BottomTabs from "./BottomTabs";
 import OnBoardingA from "views/OnBoarding/OnBoardingA";
 import OnBoardingB from "views/OnBoarding/OnBoardingB";
 import Verification from "views/Verification";
+import Detail from "../views/DetailFood/Detail";
+import BreakfastMenu from '../views/category/BreakfastMenu';
+import LunchMenu from '../views/category/LunchMenu';
+import DinnerMenu from '../views/category/DinnerMenu';
 
 const Stack = createStackNavigator();
 
-export default function NavigationStack(){
-    return(
+export default function NavigationStack() {
+    return (
         <NavigationContainer>
             <Stack.Navigator initialRouteName="OnBoardingA" screenOptions={{headerShown: false}}>
                 <Stack.Screen name="OnBoardingA" component={OnBoardingA} />
@@ -22,6 +26,10 @@ export default function NavigationStack(){
                 <Stack.Screen name="Sign" component={Sign} />
                 <Stack.Screen name="Verification" component={Verification} />
                 <Stack.Screen name="Home" component={BottomTabs} />
+                <Stack.Screen name="Detail" component={Detail} />
+                <Stack.Screen name="BreakfastMenu" component={BreakfastMenu} />
+                <Stack.Screen name="LunchMenu" component={LunchMenu} />
+                <Stack.Screen name="DinnerMenu" component={DinnerMenu} />
             </Stack.Navigator>
         </NavigationContainer>
     );

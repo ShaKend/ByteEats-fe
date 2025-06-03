@@ -11,6 +11,7 @@ import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
 import { RootStackParamList } from "navigations/RootStackParamList";
+import { useUser } from "../../context/UserContext";
 
 import { sendCodeToEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
@@ -33,6 +34,8 @@ function Sign(){
     const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [formErrors, setFormErrors] = useState<{ email?: string; username?: string; password?: string }>({});
+
+    const { refreshUser } = useUser();
 
     const inputValidation = () => {
         const errors: { email?: string; username?: string; password?: string } = {};
@@ -126,6 +129,7 @@ function Sign(){
             const token = (response as any).token;
             if (token) {
                 await AsyncStorage.setItem('token', token);
+                await refreshUser();
                 navigation.navigate('Home');
             } else {
                 setFormErrors({ password: 'Incorrect email or password.' });

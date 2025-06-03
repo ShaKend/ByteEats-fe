@@ -18,6 +18,7 @@ import Textbox from "../../components/profile/Textbox";
 import EditBtn from "../../components/profile/EditBtn";
 import { updateProfileImage, sendCodeToEmail } from "../../service/ApiServiceUser";
 import { RootStackParamList } from "navigations/RootStackParamList";
+import { useUser } from "../../context/UserContext";
 
 type SignScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -36,11 +37,10 @@ type User = {
 
 function Profile() {
   const navigation = useNavigation<SignScreenNavigationProp>();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, setUser, refreshUser } = useUser();
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  //const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
   const profileUrl = localImageUri
     ? localImageUri
@@ -78,6 +78,7 @@ function Profile() {
 
           const response = (await getProfile()) as { data: User };
           setUser(response.data);
+          await refreshUser();
           setLocalImageUri(null);          
         }
       } catch (err: any) {
@@ -122,9 +123,9 @@ function Profile() {
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const selectedImage = result.assets[0];
       setLocalImageUri(selectedImage.uri);
-      setUser((prevUser) =>
-        prevUser ? { ...prevUser, profilepicture: selectedImage.uri } : null
-      );
+      if (user) {
+        setUser({ ...user, profilepicture: selectedImage.uri });
+      }
     }
   };
   
@@ -142,18 +143,6 @@ function Profile() {
       console.error("Logout error:", err);
     }
   };
-
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const response = (await getProfile()) as { data: User };
-        setUser(response.data);
-      } catch (err) {
-        console.error("Error fetching user profile:", err);
-      }
-    };
-    fetchUserProfile();
-  }, []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -207,14 +196,13 @@ function Profile() {
             <View
               style={styles.dropdown}>
               <Picker
-              style={{ paddingLeft:0, marginLeft:0 }}
+                style={{ paddingLeft:0, marginLeft:0 }}
                 selectedValue={user?.gender ?? ''}
-                onValueChange={(itemValue) =>
-                  isEditing &&
-                  setUser((prevUser) =>
-                    prevUser ? { ...prevUser, gender: itemValue } : null
-                  )
-                }
+                onValueChange={(itemValue) => {
+                  if (isEditing && user) {
+                    setUser({ ...user, gender: itemValue });
+                  }
+                }}
                 enabled={isEditing}
               >
                 <Picker.Item label="Select Gender" value="" />
