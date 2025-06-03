@@ -118,15 +118,6 @@ function Home() {
             });
     };
 
-    useEffect(() => {
-        fetchMeals('');
-        const fetchUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('username');
-            setUsername(storedUsername);
-        };
-        fetchUsername();
-    }, []);
-
     const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
     useEffect(() => {
