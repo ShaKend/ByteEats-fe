@@ -8,7 +8,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { FlatList } from 'react-native';
 
 interface Meal {
     idMeal: string;
@@ -35,8 +34,6 @@ function Home() {
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const ITEMS_PER_PAGE = 10;
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
 
     const onCategoryPress = (category: string) => {
@@ -49,20 +46,21 @@ function Home() {
         }
     };
 
-    const fetchMeals = (query: string, pageNum = 1) => {
+    const fetchMeals = (query: string) => {
         setLoading(true);
+
+        const endpoint = query.length === 1 && /^[A-Za-z]$/.test(query)
+            ? `https://www.themealdb.com/api/json/v1/1/search.php?f=${query}`
+            : `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+
         axios
-            .get(`https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`)
+            .get(endpoint)
             .then((response) => {
                 const data = response.data as MealResponse;
                 if (data.meals) {
-                    if (pageNum === 1) {
-                        setRecommendations(data.meals);
-                    } else {
-                        setRecommendations((prev) => [...(prev ?? []), ...(data.meals ?? [])]);
-                    }
+                    setRecommendations(data.meals);
                 } else {
-                    if (pageNum === 1) setRecommendations([]);
+                    setRecommendations([]);
                 }
                 setLoading(false);
             })
@@ -114,7 +112,7 @@ function Home() {
                         style={styles.searchInput}
                         placeholderTextColor="#888"
                         value={searchQuery}
-                        onChangeText={setSearchQuery} // update state saat input berubah
+                        onChangeText={setSearchQuery}
                     />
                 </View>
             </LinearGradient>
@@ -151,7 +149,7 @@ function Home() {
                     <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
                 ) : (
                     <View style={styles.recommendationContainer}>
-                        {recommendations.map((item, index) => (
+                        {recommendations.map((item) => (
                             <TouchableOpacity
                                 key={item.idMeal}
                                 style={styles.recommendationCard}

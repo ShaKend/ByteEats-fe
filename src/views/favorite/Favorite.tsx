@@ -17,7 +17,7 @@ interface Meal {
   strMeal: string;
   strMealThumb: string;
 }
- 
+
 interface MealResponse {
   meals: Meal[] | null;
 }

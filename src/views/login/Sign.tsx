@@ -25,7 +25,7 @@ type RootStackParamList = {
 
 type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Sign'>;
 
-function Sign(){
+function Sign() {
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
     const navigation = useNavigation<SignScreenNavigationProp>();
@@ -34,21 +34,47 @@ function Sign(){
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
 
-    const handleCreateUser = async() => {
-        try{
+    const handleCreateUser = async () => {
+        if (!username.trim() || !email.trim() || !password.trim()) {
+            setErrorMessage("all the column must not be empty!");
+            return;
+        }
+
+        const usernameRegex = /^[a-zA-Z]{3,25}$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordRegex = /^[a-zA-Z0-9]{5,20}$/;
+
+        if (!usernameRegex.test(username)) {
+            setErrorMessage("Username must be 3-25 letters without numbers or symbols!");
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            setErrorMessage("Email must be valid!");
+            return;
+        }
+
+        if (!passwordRegex.test(password)) {
+            setErrorMessage("Password must be alphanumeric 5-20 characters!");
+            return;
+        }
+
+        try {
             await createUser(email, "manual", username, password);
             await handleLogin();
             navigation.navigate('Home');
-        }catch(err){
+        } catch (err) {
             console.error("Error: " + err);
+            setErrorMessage("Registrasi gagal. Silakan coba lagi.");
         }
-    }
+    };
 
-    const handleLogin = async() => {
-        try{
+
+    const handleLogin = async () => {
+        try {
             const response = await login(email, password);
-
             const token = (response as any).token;
 
             if (token) {
@@ -57,11 +83,13 @@ function Sign(){
                 console.log("Login success!");
             } else {
                 console.error("Error: Token is undefined. Login failed.");
+                alert("Login gagal. Token tidak tersedia.");
             }
-        }catch(err){
+        } catch (err) {
             console.error("Error: " + err);
+            alert("Login gagal. Silakan periksa email dan password Anda.");
         }
-    }
+    };
 
     const splitCamelCase = (str: string) => {
         return str.replace(/([a-z])([A-Z])/g, '$1 $2');
@@ -73,9 +101,25 @@ function Sign(){
         }
     }, [loginAction]);
 
+
+    // Tambahkan ini:
+    useEffect(() => {
+        setUsername('');
+        setEmail('');
+        setPassword('');
+        setErrorMessage('');
+    }, [action]);
+
+    useEffect(() => {
+        if (username.trim() && email.trim() && password.trim()) {
+            if (errorMessage === "all the column must not be empty!") {
+                setErrorMessage('');
+            }
+        }
+    }, [username, email, password]);
     const detailText = loginAction === 'SignIn'
-    ? "Hello, good to see you again!"
-    : "Start your health journey today! Track your calories intake and stay on top of your wellness";
+        ? "Hello, good to see you again!"
+        : "Start your health journey today! Track your calories intake and stay on top of your wellness";
 
     return (
         <SafeAreaView style={styles.container}>
@@ -110,38 +154,47 @@ function Sign(){
                     </Textbox>
                 } */}
 
-                {loginAction == "SignIn" ? <View></View> :                
+
+                {loginAction == "SignIn" ? <View></View> :
                     <View style={[styles.firstTextbox, styles.textInputContainer]}>
                         <Icon name={"person"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                         <TextInput
-                        placeholder={"Username"}
-                        placeholderTextColor="gray"
-                        onChangeText={setUsername}
-                        style={styles.textInput}
+                            placeholder={"Username"}
+                            placeholderTextColor="gray"
+                            onChangeText={setUsername}
+                            style={styles.textInput}
                         />
                     </View>
                 }
 
-                
+
                 <View style={loginAction == "SignIn" ? [styles.firstTextbox, styles.textInputContainer] : [styles.secondTextbox, styles.textInputContainer]}>
                     <Icon name={"alternate-email"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                     <TextInput
-                    placeholder={"Email"}
-                    placeholderTextColor="gray"
-                    onChangeText={setEmail}
-                    style={styles.textInput}
+                        placeholder={"Email"}
+                        placeholderTextColor="gray"
+                        onChangeText={setEmail}
+                        style={styles.textInput}
                     />
                 </View>
-
                 <View style={[styles.pass, styles.textInputContainer]}>
                     <Icon name={"visibility"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                     <TextInput
-                    placeholder={"Password"}
-                    placeholderTextColor="gray"
-                    onChangeText={setPassword}
-                    style={styles.textInput}
+                        placeholder={"Password"}
+                        placeholderTextColor="gray"
+                        onChangeText={setPassword}
+                        style={styles.textInput}
                     />
                 </View>
+
+                <View style={{ minHeight: 20, width: 260, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
+                    {errorMessage !== '' ? (
+                        <Text style={styles.errorText}>{errorMessage}</Text>
+                    ) : (
+                        <Text style={[styles.errorText, { color: 'transparent' }]}>placeholder</Text>
+                    )}
+                </View>
+
 
                 {/* <Textbox 
                     placeholder="Email" 
@@ -156,29 +209,29 @@ function Sign(){
                     // onChangeText={setPassword}    
                 /> */}
 
-                <SignButton 
-                    text="Continue" 
-                    styleButton={styles.btn} 
-                    styleText={styles.btnText} 
+                <SignButton
+                    text="Continue"
+                    styleButton={styles.btn}
+                    styleText={styles.btnText}
                     authprovider="manual"
                     loginAction={loginAction}
-                    onPress={() => {loginAction == 'SignUp' ? handleCreateUser() : handleLogin()}}
+                    onPress={() => { loginAction == 'SignUp' ? handleCreateUser() : handleLogin() }}
                 />
-                
+
                 <DividerMedia></DividerMedia>
 
                 {/* Ignore this component */}
-                <SignButton 
-                    text="Continue with Google" 
-                    styleButton={styles.medsos} 
-                    styleText={styles.medsosText} 
+                <SignButton
+                    text="Continue with Google"
+                    styleButton={styles.medsos}
+                    styleText={styles.medsosText}
                     authprovider="google"
                     loginAction={action}
                 />
             </View>
 
             <Footer loginAction={action}></Footer>
-            
+
         </SafeAreaView>
     );
 
@@ -190,6 +243,15 @@ const styles = StyleSheet.create({
         backgroundColor: Color.lightPurple,
         flex: 1,
         alignItems: 'center',
+    },
+
+    errorText: {
+        color: 'red',
+        marginTop: 8,
+        marginBottom: 4,
+        textAlign: 'center',
+        paddingHorizontal: 20,
+        fontSize: 14,
     },
 
     //header
@@ -221,13 +283,13 @@ const styles = StyleSheet.create({
         width: 260,
         backgroundColor: 'transparent',
         paddingHorizontal: 10, // Beri padding biar lebih rapi
-      },
-      textInputicon: {
+    },
+    textInputicon: {
         marginRight: 8, // Jarak antara ikon dan teks input
-      },
-      textInput: {
+    },
+    textInput: {
         flex: 1, // Biar input mengambil sisa ruang
-      },
+    },
 
     content: {
         marginTop: 20,
