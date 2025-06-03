@@ -156,21 +156,11 @@ function Sign() {
     }, [loginAction]);
 
 
-    // Tambahkan ini:
+    // Remove unused errorMessage logic and reset user state on action change
     useEffect(() => {
-        setUsername('');
-        setEmail('');
-        setPassword('');
-        setErrorMessage('');
+        setUser({ email: '', username: '', password: '' });
+        setFormErrors({});
     }, [action]);
-
-    useEffect(() => {
-        if (username.trim() && email.trim() && password.trim()) {
-            if (errorMessage === "all the column must not be empty!") {
-                setErrorMessage('');
-            }
-        }
-    }, [username, email, password]);
     const detailText = loginAction === 'SignIn'
         ? "Hello, good to see you again!"
         : "Start your health journey today! Track your calories intake and stay on top of your wellness";
@@ -344,10 +334,7 @@ const styles = StyleSheet.create({
     },
 
     //validation error
-    errorText: {
-        color: Color.error,
-        marginLeft: 5,
-    },
+    // errorText style removed (duplicate)
 
     //forgot password
     forgotPassword: {
