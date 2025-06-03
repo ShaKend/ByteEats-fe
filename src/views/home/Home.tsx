@@ -6,6 +6,10 @@ import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { jwtDecode } from "jwt-decode";
+import { CommonActions, useNavigation } from '@react-navigation/native';
+
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -34,6 +38,52 @@ function Home() {
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
     const [username, setUsername] = useState<string | null>(null);
+
+    const navigation = useNavigation();
+
+    // Token expiration check
+    useEffect(() => {
+        const checkToken = async () => {
+            const token = await AsyncStorage.getItem('token');
+            if (token) {
+                try {
+                    const decoded: any = jwtDecode(token);
+                    // exp is in seconds since epoch
+                    if (decoded.exp && Date.now() >= decoded.exp * 1000) {
+                        // Token expired
+                        await AsyncStorage.removeItem('token');
+                        navigation.dispatch(
+                            CommonActions.reset({
+                                index: 0,
+                                routes: [{ name: 'Login' }],
+                            })
+                        );
+                        return;
+                    }
+                } catch (e) {
+                    // Invalid token, treat as expired
+                    await AsyncStorage.removeItem('token');
+                    navigation.dispatch(
+                        CommonActions.reset({
+                            index: 0,
+                            routes: [{ name: 'Login' }],
+                        })
+                    );
+                    return;
+                }
+            } else {
+                // No token, redirect to Login
+                navigation.dispatch(
+                    CommonActions.reset({
+                        index: 0,
+                        routes: [{ name: 'Login' }],
+                    })
+                );
+                return;
+            }
+        };
+        checkToken();
+    }, [navigation]);
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
 
     const onCategoryPress = (category: string) => {
@@ -52,6 +102,7 @@ function Home() {
         const endpoint = query.length === 1 && /^[A-Za-z]$/.test(query)
             ? `https://www.themealdb.com/api/json/v1/1/search.php?f=${query}`
             : `https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`;
+
 
         axios
             .get(endpoint)
