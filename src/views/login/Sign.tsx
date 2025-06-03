@@ -24,7 +24,7 @@ type User = {
     username?: string;
 };
 
-function Sign(){
+function Sign() {
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Sign'>>();
@@ -140,6 +140,8 @@ function Sign(){
                 setFormErrors({ password: 'Incorrect password.' });
             } else {
                 setFormErrors({ password: backendMsg });
+                console.error("Error: Token is undefined. Login failed.");
+                alert("Login gagal. Token tidak tersedia.");
             }
         } finally {
             setLoading(false);
@@ -156,9 +158,15 @@ function Sign(){
         }
     }, [loginAction]);
 
+
+    // Remove unused errorMessage logic and reset user state on action change
+    useEffect(() => {
+        setUser({ email: '', username: '', password: '' });
+        setFormErrors({});
+    }, [action]);
     const detailText = loginAction === 'SignIn'
-    ? "Hello, good to see you again!"
-    : "Start your health journey today! Track your calories intake and stay on top of your wellness";
+        ? "Hello, good to see you again!"
+        : "Start your health journey today! Track your calories intake and stay on top of your wellness";
 
     return (
         <SafeAreaView style={styles.container}>
@@ -228,7 +236,7 @@ function Sign(){
                     styleText={styles.btnText}
                     onPress={loginAction === 'SignUp' ? handleCreateUser : handleLogin}
                 />
-                
+
                 <DividerMedia></DividerMedia>
 
                 {/* Ignore this component */}
@@ -240,7 +248,7 @@ function Sign(){
             </View>
 
             <Footer loginAction={action}></Footer>
-            
+
         </SafeAreaView>
     );
 
@@ -252,6 +260,15 @@ const styles = StyleSheet.create({
         backgroundColor: Color.lightPurple,
         flex: 1,
         alignItems: 'center',
+    },
+
+    errorText: {
+        color: 'red',
+        marginTop: 8,
+        marginBottom: 4,
+        textAlign: 'center',
+        paddingHorizontal: 20,
+        fontSize: 14,
     },
 
     //header
@@ -283,13 +300,13 @@ const styles = StyleSheet.create({
         width: 260,
         backgroundColor: 'transparent',
         paddingHorizontal: 10, // Beri padding biar lebih rapi
-      },
-      textInputicon: {
+    },
+    textInputicon: {
         marginRight: 8, // Jarak antara ikon dan teks input
-      },
-      textInput: {
+    },
+    textInput: {
         flex: 1, // Biar input mengambil sisa ruang
-      },
+    },
 
     content: {
         marginTop: 20,
@@ -324,10 +341,7 @@ const styles = StyleSheet.create({
     },
 
     //validation error
-    errorText: {
-        color: Color.error,
-        marginLeft: 5,
-    },
+    // errorText style removed (duplicate)
 
     //forgot password
     forgotPassword: {
