@@ -12,6 +12,9 @@ import {
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+import { useUser } from 'context/UserContext';
+import { isFavorite, addUserFavorite, deleteUserFavorite } from 'service/ApiServiceUserFavorite';
+
 interface MealDetail {
   idMeal: string;
   strMeal: string;
@@ -22,6 +25,12 @@ interface MealDetail {
   strYoutube: string;
   [key: string]: any;
 }
+
+type IsFavoriteResponse = {
+  success: boolean;
+  message: string;
+  isExists: boolean;
+};
 
 const nutritionData: Record<
   string,
@@ -129,6 +138,7 @@ function findNutritionKey(ingredient: string): string | null {
 }
 
 export default function Detail({ route }: any) {
+  const { user } = useUser();
   const { mealId } = route.params;
   const [detail, setDetail] = useState<MealDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,6 +194,29 @@ export default function Detail({ route }: any) {
     setTotalSaturatedFat(saturatedFatSum);
   }, [detail]);
 
+    useEffect(() => {
+      if (user && mealId) {
+        isFavorite(user.userid, mealId)
+          .then((res) => {
+            setIsLoved(res.isExists ?? false);
+          })
+          .catch(() => setIsLoved(false));
+      }
+    }, [user, mealId]);
+
+    const handleLovePress = async () => {
+      if (!user) return;
+      if (isLoved) {
+        // Unlike
+        await deleteUserFavorite(user.userid, mealId);
+        setIsLoved(false);
+      } else {
+        // Like
+        await addUserFavorite(user.userid, mealId);
+        setIsLoved(true);
+      }
+    };
+
   const renderIngredients = () => {
     if (!detail) return null;
 
@@ -230,7 +263,7 @@ export default function Detail({ route }: any) {
       {/* Love button */}
       <TouchableOpacity
         style={styles.loveIconContainer}
-        onPress={() => setIsLoved((prev) => !prev)}
+        onPress={handleLovePress}
         activeOpacity={0.7}
       >
         <Icon
