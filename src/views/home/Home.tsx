@@ -7,6 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { jwtDecode } from "jwt-decode";
 import { CommonActions, useNavigation } from '@react-navigation/native';
 
+import { useUser } from 'context/UserContext';
+import { API } from "../../service/ApiService"
+
 // Define types
 interface Meal {
     idMeal: string;
@@ -21,9 +24,9 @@ interface MealResponse {
 function Home() {
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
-    const [username, setUsername] = useState<string | null>(null);
     const navigation = useNavigation();
-
+    const { user } = useUser();
+    
     // Token expiration check
     useEffect(() => {
         const checkToken = async () => {
@@ -85,13 +88,9 @@ function Home() {
                 console.error('Error fetching meals:', error);
                 setLoading(false);
             });
-            const fetchUsername = async () => {
-                const storedUsername = await AsyncStorage.getItem('username');
-                setUsername(storedUsername); // Set the username if found in AsyncStorage
-            };
-    
-            fetchUsername();
     }, []);
+
+    const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -103,11 +102,11 @@ function Home() {
                 >
                 <View style={styles.header}>
                     <View>
-                    <Text style={styles.greeting}>Hello, Lene!</Text>
+                    <Text style={styles.greeting}>Hello, {user?.username}</Text>
                         <Text style={styles.subtitle}>Achieve Your Nutrition Goals</Text>
                     </View>
                     <Image
-                        source={require('../../assets/profile.png')}
+                        source={profileUrl ? { uri: profileUrl } : require('../../assets/byte-eats-logo.png')}
                         style={styles.avatar}
                     />
                 </View>
