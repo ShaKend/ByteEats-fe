@@ -5,15 +5,16 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Color } from '../../styles/Color';
 
 interface EditBtnProps {
-    onClick?: () => void;
+    onClick: () => void;
+    text: string;
 }
 
-const EditBtn: React.FC<EditBtnProps> = ({ onClick }) => {
+const EditBtn: React.FC<EditBtnProps> = ({ onClick, text }) => {
     return (
         <View style={styles.container}>
             <TouchableOpacity style={styles.button} onPress={onClick}>
                 <Icon name="edit" size={20} color={Color.darkPurple} />
-                <Text style={styles.text}>Edit Profile</Text>
+                <Text style={styles.text}>{text}</Text>
             </TouchableOpacity>
         </View>
     );
@@ -21,7 +22,8 @@ const EditBtn: React.FC<EditBtnProps> = ({ onClick }) => {
 
 const styles = StyleSheet.create({
     container: {
-        padding: 40,
+        marginTop: 30,
+        paddingHorizontal: 40,
     },
     text: {
         color: Color.darkPurple, 

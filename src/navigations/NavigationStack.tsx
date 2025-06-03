@@ -10,6 +10,7 @@ import Detail from "../views/DetailFood/Detail";
 import BreakfastMenu from '../views/category/BreakfastMenu';
 import LunchMenu from '../views/category/LunchMenu';
 import DinnerMenu from '../views/category/DinnerMenu';
+import Verification from "views/login/Verification";
 
 const Stack = createStackNavigator();
 
@@ -19,6 +20,7 @@ export default function NavigationStack() {
             <Stack.Navigator initialRouteName="Login" screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="Login" component={Login} />
                 <Stack.Screen name="Sign" component={Sign} />
+                <Stack.Screen name="Verification" component={Verification} />
                 <Stack.Screen name="Home" component={BottomTabs} />
                 <Stack.Screen name="Detail" component={Detail} />
                 <Stack.Screen name="BreakfastMenu" component={BreakfastMenu} />
