@@ -1,93 +1,152 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, TouchableOpacity, StyleSheet, ViewStyle, TextInput, Button } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { Color } from "../../styles/Color";
-import SignHeader from "../../components/login/SignHeader";
 import SignButton from "../../components/login/SignButton";
 import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
+import { RootStackParamList } from "navigations/RootStackParamList";
+import { useUser } from "../../context/UserContext";
 
-import { createUser, login } from "../../service/ApiServiceUser";
+import { sendCodeToEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
 };
 
-type RootStackParamList = {
-    Home: undefined; // No parameters for Dashboard
-    Sign: { loginAction: string }; // Parameters for the Sign page
+type User = {
+    email: string;
+    password: string;
+    username?: string;
 };
 
-type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Sign'>;
-
-function Sign() {
+function Sign(){
     const route = useRoute();
     const loginAction = (route.params as RouteParams)?.loginAction || 'SignIn';
-    const navigation = useNavigation<SignScreenNavigationProp>();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Sign'>>();
 
     const [action, setAction] = useState(loginAction);
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [errorMessage, setErrorMessage] = useState('');
+    const [user, setUser] = useState<User>({ email: '', username: '', password: '' });
+    const [loading, setLoading] = useState(false);
+    const [formErrors, setFormErrors] = useState<{ email?: string; username?: string; password?: string }>({});
 
-    const handleCreateUser = async () => {
-        if (!username.trim() || !email.trim() || !password.trim()) {
-            setErrorMessage("all the column must not be empty!");
-            return;
+    const { refreshUser } = useUser();
+
+    const inputValidation = () => {
+        const errors: { email?: string; username?: string; password?: string } = {};
+        
+        // Username validation (only for SignUp)
+        if (action === "SignUp") {
+            if (!user.username || user.username.trim() === "") {
+                errors.username = "Username is required.";
+            } else if (user.username.length < 2) {
+                errors.username = "Username must be at least 2 characters.";
+            }
         }
 
-        const usernameRegex = /^[a-zA-Z]{3,25}$/;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const passwordRegex = /^[a-zA-Z0-9]{5,20}$/;
-
-        if (!usernameRegex.test(username)) {
-            setErrorMessage("Username must be 3-25 letters without numbers or symbols!");
-            return;
+        // Email validation
+        if (!user.email || user.email.trim() === "") {
+            errors.email = "Email is required.";
+        } else {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(user.email)) {
+                errors.email = "Please enter a valid email address.";
+            }
         }
 
-        if (!emailRegex.test(email)) {
-            setErrorMessage("Email must be valid!");
-            return;
+        // Password validation
+        if (!user.password || user.password.trim() === "") {
+            errors.password = "Password is required.";
+        } else if (user.password.length < 5) {
+            errors.password = "Password must be at least 5 characters.";
         }
 
-        if (!passwordRegex.test(password)) {
-            setErrorMessage("Password must be alphanumeric 5-20 characters!");
-            return;
-        }
+        return errors;
+    };
 
+    const isEmailExists = async () => {
         try {
-            await createUser(email, "manual", username, password);
-            await handleLogin();
-            navigation.navigate('Home');
-        } catch (err) {
-            console.error("Error: " + err);
-            setErrorMessage("Registrasi gagal. Silakan coba lagi.");
+            const response = await getUserByEmail(user?.email);
+            if (response && Object.keys(response).length > 0) {
+                return "Email already exists.";
+            }
+            return false;
+        } catch (error: any) {
+            // If backend returns 404, treat as 'email does not exist' (OK for registration)
+            if (error.response && error.response.status === 404) {
+                return false;
+            }
+            console.error("Error checking email existence:", error);
+            return false;
         }
     };
 
-
-    const handleLogin = async () => {
+    const handleCreateUser = async () => {
+        setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
+        // Only check for email existence if no other errors
+        const emailExists = await isEmailExists();
+        if (emailExists) {
+            setFormErrors({ email: emailExists as string });
+            setLoading(false);
+            return;
+        }
         try {
-            const response = await login(email, password);
-            const token = (response as any).token;
-
-            if (token) {
-                await AsyncStorage.setItem('token', token);
-                navigation.navigate('Home');
-                console.log("Login success!");
-            } else {
-                console.error("Error: Token is undefined. Login failed.");
-                alert("Login gagal. Token tidak tersedia.");
-            }
+            await sendCodeToEmail(user?.email);
+            navigation.navigate('Verification', {
+                email: user.email,
+                username: user.username,
+                password: user.password,
+                action: 'register'
+            });
         } catch (err) {
             console.error("Error: " + err);
-            alert("Login gagal. Silakan periksa email dan password Anda.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleLogin = async () => {
+        setLoading(true);
+        const errors = inputValidation();
+        setFormErrors(errors);
+        if (Object.keys(errors).length > 0) {
+            setLoading(false);
+            return;
+        }
+        try {
+            const response = await login(user?.email, user?.password);
+            const token = (response as any).token;
+            if (token) {
+                await AsyncStorage.setItem('token', token);
+                await refreshUser();
+                navigation.navigate('Home');
+            } else {
+                setFormErrors({ password: 'Incorrect email or password.' });
+            }
+        } catch (err: any) {
+            // Handle backend error messages
+            const backendMsg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+            // Try to distinguish between email not found and wrong password
+            if (backendMsg.toLowerCase().includes('not found')) {
+                setFormErrors({ email: 'Email does not exist.' });
+            } else if (backendMsg.toLowerCase().includes('password')) {
+                setFormErrors({ password: 'Incorrect password.' });
+            } else {
+                setFormErrors({ password: backendMsg });
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -101,36 +160,17 @@ function Sign() {
         }
     }, [loginAction]);
 
-
-    // Tambahkan ini:
-    useEffect(() => {
-        setUsername('');
-        setEmail('');
-        setPassword('');
-        setErrorMessage('');
-    }, [action]);
-
-    useEffect(() => {
-        if (username.trim() && email.trim() && password.trim()) {
-            if (errorMessage === "all the column must not be empty!") {
-                setErrorMessage('');
-            }
-        }
-    }, [username, email, password]);
     const detailText = loginAction === 'SignIn'
-        ? "Hello, good to see you again!"
-        : "Start your health journey today! Track your calories intake and stay on top of your wellness";
+    ? "Hello, good to see you again!"
+    : "Start your health journey today! Track your calories intake and stay on top of your wellness";
 
     return (
         <SafeAreaView style={styles.container}>
-
-            {/* <SignHeader
-                title={splitCamelCase(loginAction)}
-                detail={detailText}
-                styleHeader={styles.header}
-            ></SignHeader> */}
-
-
+            {loading && (
+                <View style={styles.loading}>
+                    <ActivityIndicator size="large" color={Color.darkPurple} />
+                </View>
+            )}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>
                     {splitCamelCase(loginAction)}
@@ -140,98 +180,71 @@ function Sign() {
                 </Text>
             </View>
 
-
             <View style={styles.content}>
-
-
-                {/* {loginAction == "SignIn" ? <View></View> :
-                    <Textbox
-                        placeholder="Username" 
-                        iconName="person" 
-                        styleTextbox={styles.firstTextbox}
-                        // onChangeText={setUsername}
-                    >
-                    </Textbox>
-                } */}
-
-
                 {loginAction == "SignIn" ? <View></View> :
                     <View style={[styles.firstTextbox, styles.textInputContainer]}>
                         <Icon name={"person"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
                         <TextInput
-                            placeholder={"Username"}
-                            placeholderTextColor="gray"
-                            onChangeText={setUsername}
-                            style={styles.textInput}
+                        placeholder={"Username"}
+                        placeholderTextColor="gray"
+                        style={styles.textInput}
+                        onChangeText={(value) => {setUser({ ...user, username: value })}}
                         />
                     </View>
                 }
+                {formErrors.username && (
+                    <Text style={styles.errorText}>{formErrors.username}</Text>
+                )}
 
+                <Textbox
+                    placeholder="Email"
+                    iconName="alternate-email"
+                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox}
+                    onChangeText={(value) => {setUser({ ...user, email: value })}}
+                    keyboardType="email-address"
+                />
+                {formErrors.email && (
+                    <Text style={styles.errorText}>{formErrors.email}</Text>
+                )}
 
-                <View style={loginAction == "SignIn" ? [styles.firstTextbox, styles.textInputContainer] : [styles.secondTextbox, styles.textInputContainer]}>
-                    <Icon name={"alternate-email"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                        placeholder={"Email"}
-                        placeholderTextColor="gray"
-                        onChangeText={setEmail}
-                        style={styles.textInput}
-                    />
-                </View>
-                <View style={[styles.pass, styles.textInputContainer]}>
-                    <Icon name={"visibility"} size={20} color={Color.darkPurple} style={styles.textInputicon} />
-                    <TextInput
-                        placeholder={"Password"}
-                        placeholderTextColor="gray"
-                        onChangeText={setPassword}
-                        style={styles.textInput}
-                    />
-                </View>
+                <Textbox
+                    placeholder="Password"
+                    iconName="visibility"
+                    styleTextbox={styles.pass}
+                    onChangeText={(value) => {setUser({ ...user, password: value })}}
+                    secureTextEntry={true}
+                />
+                {formErrors.password && (
+                    <Text style={styles.errorText}>{formErrors.password}</Text>
+                )}
+                { loginAction === 'SignIn' &&
+                    <TouchableOpacity onPress={() => navigation.navigate('Verification', { email: user?.email ?? '', username: '', password: '', action: 'forgot' })}>
+                        <Text style={styles.forgotPassword}>
+                            Forgot Password?
+                        </Text>
+                    </TouchableOpacity>
+                }
 
-                <View style={{ minHeight: 20, width: 260, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-                    {errorMessage !== '' ? (
-                        <Text style={styles.errorText}>{errorMessage}</Text>
-                    ) : (
-                        <Text style={[styles.errorText, { color: 'transparent' }]}>placeholder</Text>
-                    )}
-                </View>
-
-
-                {/* <Textbox 
-                    placeholder="Email" 
-                    iconName="alternate-email" 
-                    styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox} 
-                    // onChangeText={setEmail}
-                /> */}
-                {/* <Textbox 
-                    placeholder="Password" 
-                    iconName="visibility" 
-                    styleTextbox={styles.pass} 
-                    // onChangeText={setPassword}    
-                /> */}
 
                 <SignButton
                     text="Continue"
                     styleButton={styles.btn}
                     styleText={styles.btnText}
-                    authprovider="manual"
-                    loginAction={loginAction}
-                    onPress={() => { loginAction == 'SignUp' ? handleCreateUser() : handleLogin() }}
+                    onPress={loginAction === 'SignUp' ? handleCreateUser : handleLogin}
                 />
-
+                
                 <DividerMedia></DividerMedia>
 
                 {/* Ignore this component */}
-                <SignButton
-                    text="Continue with Google"
-                    styleButton={styles.medsos}
-                    styleText={styles.medsosText}
-                    authprovider="google"
-                    loginAction={action}
+                <SignButton 
+                    text="Continue with Google" 
+                    styleButton={styles.medsos} 
+                    styleText={styles.medsosText} 
                 />
             </View>
 
             <Footer loginAction={action}></Footer>
-
+            
         </SafeAreaView>
     );
 
@@ -243,15 +256,6 @@ const styles = StyleSheet.create({
         backgroundColor: Color.lightPurple,
         flex: 1,
         alignItems: 'center',
-    },
-
-    errorText: {
-        color: 'red',
-        marginTop: 8,
-        marginBottom: 4,
-        textAlign: 'center',
-        paddingHorizontal: 20,
-        fontSize: 14,
     },
 
     //header
@@ -283,25 +287,25 @@ const styles = StyleSheet.create({
         width: 260,
         backgroundColor: 'transparent',
         paddingHorizontal: 10, // Beri padding biar lebih rapi
-    },
-    textInputicon: {
+      },
+      textInputicon: {
         marginRight: 8, // Jarak antara ikon dan teks input
-    },
-    textInput: {
+      },
+      textInput: {
         flex: 1, // Biar input mengambil sisa ruang
-    },
+      },
 
     content: {
         marginTop: 20,
     },
     firstTextbox: {
-        marginTop: 40
+        marginTop: 20
     },
     secondTextbox: {
-        marginTop: 20
+        marginTop: 25
     },
     pass: {
-        marginTop: 20
+        marginTop: 25
     },
     btn: {
         backgroundColor: Color.darkPurple,
@@ -323,6 +327,20 @@ const styles = StyleSheet.create({
         fontWeight: 700,
     },
 
+    //validation error
+    errorText: {
+        color: Color.error,
+        marginLeft: 5,
+    },
+
+    //forgot password
+    forgotPassword: {
+        color: Color.darkPurple,
+        fontSize: 14,
+        textAlign: 'right',
+        textDecorationLine: 'underline',
+    },
+
     //footer
     footerContent: {
         position: 'relative',
@@ -340,6 +358,19 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: 'center'
     },
+
+    //loading
+    loading: {
+        position: 'absolute', 
+        top: 0, 
+        left: 0, 
+        right: 0, 
+        bottom: 0, 
+        backgroundColor: 'rgba(255,255,255,0.5)', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        zIndex: 10
+    }
 });
 
 export default Sign;

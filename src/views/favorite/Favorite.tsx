@@ -3,6 +3,8 @@ import {
   View,Text,StyleSheet,SafeAreaView,Image,ScrollView,ActivityIndicator,TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
+
+import { useUser } from 'context/UserContext';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
@@ -25,6 +27,7 @@ interface MealResponse {
 function Favorites() {
   const [recommendations, setRecommendations] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
+    const { user } = useUser();
   const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {

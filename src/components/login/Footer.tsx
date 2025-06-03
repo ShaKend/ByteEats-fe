@@ -3,10 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Color } from "../../styles/Color";
 import React from "react";
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-    Sign: { loginAction: string }; // Single screen named 'Sign' with the 'loginAction' param
-};
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 interface FooterProps {
     styleFooter?: ViewStyle;

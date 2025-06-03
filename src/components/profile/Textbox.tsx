@@ -7,14 +7,18 @@ interface TextboxProps {
     label: string;
     styleTextbox?: ViewStyle;
     onChange?: (text: string) => void; // Add the onChange prop
+    maxLength?: number; // Optional prop for max length
+    keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; // Optional prop for keyboard type
 }
 
 const Textbox: React.FC<TextboxProps> = ({
     styleTextbox,
     value,
     onChange, 
-    isDisabled = true,
-    label
+    isDisabled,
+    label,
+    maxLength,
+    keyboardType = "default", 
 }) => {
     return (
         <View style={[styles.container, styleTextbox]}>
@@ -22,11 +26,12 @@ const Textbox: React.FC<TextboxProps> = ({
                 <Text style={styles.text}>{label}</Text>
             </View>
             <TextInput
-                style={styles.textInput}
-                placeholderTextColor="gray"
-                value={value} // Bind the value prop
-                onChangeText={onChange} // Use the onChange prop
-                editable={!isDisabled} // Disable the TextInput if isDisabled is true
+                style={[styles.textInput, { opacity: isDisabled ? 1 : 0.5 }]}
+                value={value} 
+                onChangeText={onChange} 
+                editable={isDisabled} 
+                maxLength={maxLength}
+                keyboardType={keyboardType}
             />
         </View>
     );
@@ -38,14 +43,12 @@ const styles = StyleSheet.create({
         marginTop: 20,
         display: 'flex',
         flexDirection: 'row',
-        // borderColor: 'gray',
-        // borderWidth: 0.5,
     },
     text: {
         fontSize: 16,
         fontWeight: 'bold',
         color: 'black',
-        width: 70,
+        width: 80,
     },
     textInput: {
         paddingVertical: 0,
