@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, Image, ScrollView, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 
+import { useUser } from 'context/UserContext';
+
 interface Meal {
     idMeal: string;
     strMeal: string;
@@ -15,6 +17,7 @@ interface MealResponse {
 function Favorites() {
     const [recommendations, setRecommendations] = useState<Meal[]>([]);
     const [loading, setLoading] = useState(true);
+    const { user } = useUser();
 
     // Fetch meals from API
     useEffect(() => {
