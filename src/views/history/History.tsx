@@ -10,6 +10,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { useUser } from 'context/UserContext';
+
 type HistoryItem = {
   id: string;
   name: string;
@@ -64,6 +66,8 @@ const historyData: HistoryItem[] = [
 ];
 
 const History: React.FC = () => {
+  const { user } = useUser();
+  
   const renderItem = ({ item }: { item: HistoryItem }) => (
     <View style={styles.item}>
       <Image source={item.image} style={styles.image} />
