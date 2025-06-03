@@ -7,6 +7,8 @@ interface TextboxProps {
     label: string;
     styleTextbox?: ViewStyle;
     onChange?: (text: string) => void; // Add the onChange prop
+    maxLength?: number; // Optional prop for max length
+    keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; // Optional prop for keyboard type
 }
 
 const Textbox: React.FC<TextboxProps> = ({
@@ -15,6 +17,8 @@ const Textbox: React.FC<TextboxProps> = ({
     onChange, 
     isDisabled,
     label,
+    maxLength,
+    keyboardType = "default", 
 }) => {
     return (
         <View style={[styles.container, styleTextbox]}>
@@ -26,6 +30,8 @@ const Textbox: React.FC<TextboxProps> = ({
                 value={value} 
                 onChangeText={onChange} 
                 editable={isDisabled} 
+                maxLength={maxLength}
+                keyboardType={keyboardType}
             />
         </View>
     );

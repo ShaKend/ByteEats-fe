@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator } from "react-native";
+import { SafeAreaView, View, Text, StyleSheet, TextInput, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,20 +10,12 @@ import SignButton from "../../components/login/SignButton";
 import Textbox from "../../components/login/Textbox";
 import DividerMedia from "../../components/login/DividerMedia";
 import Footer from "../../components/login/Footer";
+import { RootStackParamList } from "navigations/RootStackParamList";
 
-import { verifyEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
+import { sendCodeToEmail, login, getUserByEmail } from "../../service/ApiServiceUser";
 
 type RouteParams = {
     loginAction: string;
-};
-
-type RootStackParamList = {
-    Home: undefined;
-    Sign: { loginAction: string };
-    Verification: {
-        email: string;
-        username?: string;
-        password: string;};
 };
 
 type User = {
@@ -107,11 +99,12 @@ function Sign(){
             return;
         }
         try {
-            await verifyEmail(user?.email);
+            await sendCodeToEmail(user?.email);
             navigation.navigate('Verification', {
                 email: user.email,
                 username: user.username,
                 password: user.password,
+                action: 'register'
             });
         } catch (err) {
             console.error("Error: " + err);
@@ -135,10 +128,19 @@ function Sign(){
                 await AsyncStorage.setItem('token', token);
                 navigation.navigate('Home');
             } else {
-                console.error("Error: Token is undefined. Login failed.");
+                setFormErrors({ password: 'Incorrect email or password.' });
             }
-        } catch (err) {
-            console.error("Error: " + err);
+        } catch (err: any) {
+            // Handle backend error messages
+            const backendMsg = err.response?.data?.message || err.message || 'Login failed. Please check your credentials.';
+            // Try to distinguish between email not found and wrong password
+            if (backendMsg.toLowerCase().includes('not found')) {
+                setFormErrors({ email: 'Email does not exist.' });
+            } else if (backendMsg.toLowerCase().includes('password')) {
+                setFormErrors({ password: 'Incorrect password.' });
+            } else {
+                setFormErrors({ password: backendMsg });
+            }
         } finally {
             setLoading(false);
         }
@@ -195,6 +197,7 @@ function Sign(){
                     iconName="alternate-email"
                     styleTextbox={loginAction == "SignIn" ? styles.firstTextbox : styles.secondTextbox}
                     onChangeText={(value) => {setUser({ ...user, email: value })}}
+                    keyboardType="email-address"
                 />
                 {formErrors.email && (
                     <Text style={styles.errorText}>{formErrors.email}</Text>
@@ -205,14 +208,17 @@ function Sign(){
                     iconName="visibility"
                     styleTextbox={styles.pass}
                     onChangeText={(value) => {setUser({ ...user, password: value })}}
+                    secureTextEntry={true}
                 />
                 {formErrors.password && (
                     <Text style={styles.errorText}>{formErrors.password}</Text>
                 )}
                 { loginAction === 'SignIn' &&
-                    <Text style={styles.forgotPassword}>
-                        Forgot Password?
-                    </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Verification', { email: user?.email ?? '', username: '', password: '', action: 'forgot' })}>
+                        <Text style={styles.forgotPassword}>
+                            Forgot Password?
+                        </Text>
+                    </TouchableOpacity>
                 }
 
 

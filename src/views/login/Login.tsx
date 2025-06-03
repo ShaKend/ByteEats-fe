@@ -6,27 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect } from "react";
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
-type RootStackParamList = {
-    Home: undefined;
-    Sign: { loginAction: string };
-    Verification: undefined;
-};
-
-// type SignScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 function Login(){
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    useEffect(() => {
-        const checkAuth = async () => {
-            const token = await AsyncStorage.getItem('token');
-            if (token) {
-                navigation.navigate('Home');
-            } 
-        };
-        checkAuth();
-    }, []);
-
 
     return(
         <SafeAreaView style={styles.container}>
@@ -38,7 +21,6 @@ function Login(){
                         styleButton={styles.signUp}
                         styleText={styles.btnTextSignUp}
                         onPress={() => navigation.navigate('Sign', { loginAction: 'SignUp' })}
-                        // onPress={() => navigation.navigate("Verification")}
                     />
                     <SignButton
                         text="Sign in"

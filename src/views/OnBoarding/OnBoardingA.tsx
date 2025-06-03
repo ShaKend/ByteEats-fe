@@ -1,10 +1,22 @@
 // src/views/OnBoarding/OnBoardingA.tsx
-import React from "react";
+import React, {useEffect} from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from "navigations/RootStackParamList";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function OnBoardingA() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  useEffect(() => {
+      const checkAuth = async () => {
+          const token = await AsyncStorage.getItem('token');
+          if (token) {
+              navigation.navigate('Home');
+          } 
+      };
+      checkAuth();
+  }, []);
 
   return (
     <View style={styles.container}>
