@@ -198,7 +198,12 @@ function Home() {
                                 onPress={async () => {
                                     try {
                                         if (user?.userid) {
-                                            await addUserHistory(user.userid, item.idMeal);
+                                            try{
+                                                await addUserHistory(user.userid, item.idMeal);
+                                            }catch(err){
+                                                console.error("Error adding to history: ", err);
+                                                throw err;
+                                            }
                                         }
                                         navigation.navigate('Detail', { mealId: item.idMeal });
                                     } catch (error) {

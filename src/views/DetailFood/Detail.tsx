@@ -245,6 +245,17 @@ export default function Detail({ route }: any) {
     );
   }
 
+  function getInstructionSteps(instructions: string): string[] {
+    if (!instructions) return [];
+    // Split by \r\n or . (period), but keep the period at the end of each step
+    // First split by \r\n, then further split each by period.
+    const lines = instructions.split(/\r?\n/).flatMap(line =>
+      line.split('.').map(s => s.trim()).filter(Boolean).map(s => s + '.')
+    );
+    // Remove empty or very short steps
+    return lines.map(s => s.trim()).filter(s => s.length > 2);
+  }
+
   if (!detail) {
     return (
       <View style={styles.container}>
@@ -296,7 +307,11 @@ export default function Detail({ route }: any) {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Instructions</Text>
-        <Text style={styles.instructions}>{detail.strInstructions}</Text>
+        {getInstructionSteps(detail.strInstructions).map((step, idx) => (
+          <Text key={idx} style={styles.instructions}>
+            {idx + 1}. {step}
+          </Text>
+        ))}
       </View>
 
       {detail.strYoutube ? (
@@ -383,6 +398,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 24,
     color: '#333',
+    marginTop: 5
   },
   nutritionText: {
     fontSize: 18,

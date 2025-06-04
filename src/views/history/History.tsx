@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, SafeAreaView, StyleSheet, Image,
   FlatList, TouchableOpacity, ActivityIndicator, Alert,
@@ -6,6 +6,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import moment from 'moment';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 import { useUser } from 'context/UserContext';
 import { getUserHistory } from '../../service/ApiServiceUserHistory';
 
@@ -13,50 +15,87 @@ import { getUserHistory } from '../../service/ApiServiceUserHistory';
 type HistoryItem = {
   idmeal: string;
   name: string;
-  kcal: string;
+  // kcal: string;
   date: string;
   image?: string;
+};
+
+type ApiHistoryResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    idmeal: string;
+    createdat: string;
+  }[];
 };
 
 const History: React.FC = () => {
   const { user } = useUser();
   const navigation = useNavigation();
   const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  
 
-  useEffect(() => {
-  const fetchHistory = async () => {
-    if (!user?.userid) {
-      Alert.alert("User not found");
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await getUserHistory(user.userid);
-      console.log("API Response:", response); // <-- Tambahkan ini
+  useFocusEffect(
+    useCallback(() => {
+      const fetchHistory = async () => {
+        if (!user?.userid) {
+          Alert.alert("User not found");
+          return;
+        }
+        setLoading(true);
+        try {
+          const response = await getUserHistory(user.userid) as ApiHistoryResponse;
+          const historyArray = Array.isArray(response.data) ? response.data : [];
+          const mealPromises = historyArray.map(async (item) => {
+            try {
+              const res = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.idmeal}`);
+              const data = res.data as { meals?: any[] };
+              const meal = data.meals?.[0];
+              return {
+                idmeal: item.idmeal,
+                name: meal ? meal.strMeal : 'Unknown',
+                image: meal?.strMealThumb,
+                date: item.createdat,
+              };
+            } catch {
+              return {
+                idmeal: item.idmeal,
+                name: 'Unknown',
+                image: undefined,
+                date: item.createdat,
+              };
+            }
+          });
+          const historyWithMeals = await Promise.all(mealPromises);
+          setHistoryData(historyWithMeals);
+        } catch (error) {
+          Alert.alert("Error fetching history", String(error));
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchHistory();
+    }, [user])
+  );
 
-      if (Array.isArray(response)) {
-        setHistoryData(response as HistoryItem[]);
-      } else {
-        setHistoryData([]);
-        Alert.alert("Invalid history data received");
-      }
-    } catch (error) {
-      Alert.alert("Error fetching history", String(error));
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  fetchHistory();
-}, [user]);
+//   const renderItem = ({ item }: { item: HistoryItem }) => (
+//   <View style={styles.item}>
+//     <View style={styles.info}>
+//       <Text style={styles.name}>{item.name}</Text>
+//       {/* <Text style={styles.kcal}>{item.kcal}</Text> */}
+//       <Text style={styles.date}>{moment(item.date).format('DD MMM YYYY')}</Text>
+//     </View>
+//   </View>
+// );
 
-
-  const renderItem = ({ item }: { item: HistoryItem }) => (
+const renderItem = ({ item }: { item: HistoryItem }) => (
   <View style={styles.item}>
+    {item.image && (
+      <Image source={{ uri: item.image }} style={{ width: 60, height: 60, borderRadius: 10 }} />
+    )}
     <View style={styles.info}>
       <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.kcal}>{item.kcal}</Text>
       <Text style={styles.date}>{moment(item.date).format('DD MMM YYYY')}</Text>
     </View>
   </View>
