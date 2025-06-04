@@ -1,97 +1,136 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  SafeAreaView,
-  StyleSheet,
-  Image,
-  FlatList,
-  TouchableOpacity,
+  View, Text, SafeAreaView, StyleSheet, Image,
+  FlatList, TouchableOpacity, ActivityIndicator, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-
+import { useNavigation } from '@react-navigation/native';
+import moment from 'moment';
+import axios from 'axios';
+import { useFocusEffect } from '@react-navigation/native';
 import { useUser } from 'context/UserContext';
+import { getUserHistory } from '../../service/ApiServiceUserHistory';
+
 
 type HistoryItem = {
-  id: string;
+  idmeal: string;
   name: string;
-  kcal: string;
+  // kcal: string;
   date: string;
-  image: { uri: string };
+  image?: string;
 };
 
-const historyData: HistoryItem[] = [
-  {
-    id: '1',
-    name: 'Doughnut',
-    kcal: '170 kkal',
-    date: '10 February 2025 - 9:56 AM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-  {
-    id: '2',
-    name: 'Fried Noodle',
-    kcal: '360 kkal',
-    date: '22 March 2025 - 9:56 AM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-  {
-    id: '3',
-    name: 'Spaghetti Bolognese',
-    kcal: '380 kkal',
-    date: '25 March 2025 - 12:56 PM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-  {
-    id: '4',
-    name: 'Smoothie',
-    kcal: '100 kkal',
-    date: '25 March 2025 - 12:56 PM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-  {
-    id: '5',
-    name: 'Black Forest',
-    kcal: '350 kkal',
-    date: '20 March 2025 - 14:06 PM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-  {
-    id: '6',
-    name: 'Black Tea',
-    kcal: '200 kkal',
-    date: '25 March 2025 - 14:06 PM',
-    image: { uri: 'https://via.placeholder.com/60' },
-  },
-];
+type ApiHistoryResponse = {
+  success: boolean;
+  message: string;
+  data: {
+    idmeal: string;
+    createdat: string;
+  }[];
+};
 
 const History: React.FC = () => {
   const { user } = useUser();
-  
-  const renderItem = ({ item }: { item: HistoryItem }) => (
-    <View style={styles.item}>
-      <Image source={item.image} style={styles.image} />
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.kcal}>{item.kcal}</Text>
-        <Text style={styles.date}>{item.date}</Text>
-      </View>
-    </View>
+  const navigation = useNavigation();
+  const [historyData, setHistoryData] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(false);  
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchHistory = async () => {
+        if (!user?.userid) {
+          Alert.alert("User not found");
+          return;
+        }
+        setLoading(true);
+        try {
+          const response = await getUserHistory(user.userid) as ApiHistoryResponse;
+          const historyArray = Array.isArray(response.data) ? response.data : [];
+          const mealPromises = historyArray.map(async (item) => {
+            try {
+              const res = await axios.get(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${item.idmeal}`);
+              const data = res.data as { meals?: any[] };
+              const meal = data.meals?.[0];
+              return {
+                idmeal: item.idmeal,
+                name: meal ? meal.strMeal : 'Unknown',
+                image: meal?.strMealThumb,
+                date: item.createdat,
+              };
+            } catch {
+              return {
+                idmeal: item.idmeal,
+                name: 'Unknown',
+                image: undefined,
+                date: item.createdat,
+              };
+            }
+          });
+          const historyWithMeals = await Promise.all(mealPromises);
+          setHistoryData(historyWithMeals);
+        } catch (error) {
+          Alert.alert("Error fetching history", String(error));
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchHistory();
+    }, [user])
   );
+
+
+//   const renderItem = ({ item }: { item: HistoryItem }) => (
+//   <View style={styles.item}>
+//     <View style={styles.info}>
+//       <Text style={styles.name}>{item.name}</Text>
+//       {/* <Text style={styles.kcal}>{item.kcal}</Text> */}
+//       <Text style={styles.date}>{moment(item.date).format('DD MMM YYYY')}</Text>
+//     </View>
+//   </View>
+// );
+
+const renderItem = ({ item }: { item: HistoryItem }) => (
+  <View style={styles.item}>
+    {item.image && (
+      <Image source={{ uri: item.image }} style={{ width: 60, height: 60, borderRadius: 10 }} />
+    )}
+    <View style={styles.info}>
+      <Text style={styles.name}>{item.name}</Text>
+      <Text style={styles.date}>{moment(item.date).format('DD MMM YYYY')}</Text>
+    </View>
+  </View>
+);
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="purple" />
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="purple" />
       </TouchableOpacity>
+
       <FlatList
         data={historyData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.idmeal || index.toString()}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 100 }}
+        ListEmptyComponent={() => (
+          <View style={styles.center}>
+            <Text style={{ color: 'gray' }}>Tidak ada riwayat makanan.</Text>
+          </View>
+        )}
       />
+
       <View style={styles.navBar}>
-        <Ionicons name="home" size={24} color="white" />
+        <TouchableOpacity onPress={() => navigation.navigate('Home' as never)}>
+          <Ionicons name="home" size={24} color="white" />
+        </TouchableOpacity>
         <Ionicons name="heart" size={24} color="white" />
         <Ionicons name="scan" size={24} color="white" />
         <Ionicons name="time" size={24} color="white" />
@@ -102,13 +141,8 @@ const History: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    padding: 15,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  backButton: { padding: 15 },
   item: {
     flexDirection: 'row',
     paddingHorizontal: 20,
@@ -116,27 +150,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.3,
     borderBottomColor: '#ccc',
   },
-  image: {
-    width: 60,
-    height: 60,
-    borderRadius: 10,
-  },
-  info: {
-    marginLeft: 15,
-    justifyContent: 'center',
-  },
-  name: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  kcal: {
-    color: 'gray',
-    marginTop: 2,
-  },
-  date: {
-    color: 'gray',
-    fontSize: 12,
-  },
+  info: { marginLeft: 15, justifyContent: 'center' },
+  name: { fontWeight: 'bold', fontSize: 16 },
+  kcal: { color: 'gray', marginTop: 2 },
+  date: { color: 'gray', fontSize: 12 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   navBar: {
     position: 'absolute',
     bottom: 0,

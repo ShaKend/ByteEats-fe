@@ -12,6 +12,9 @@ import {
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
+import { useUser } from 'context/UserContext';
+import { isFavorite, addUserFavorite, deleteUserFavorite } from 'service/ApiServiceUserFavorite';
+
 interface MealDetail {
   idMeal: string;
   strMeal: string;
@@ -22,6 +25,12 @@ interface MealDetail {
   strYoutube: string;
   [key: string]: any;
 }
+
+type IsFavoriteResponse = {
+  success: boolean;
+  message: string;
+  isExists: boolean;
+};
 
 const nutritionData: Record<
   string,
@@ -129,6 +138,7 @@ function findNutritionKey(ingredient: string): string | null {
 }
 
 export default function Detail({ route }: any) {
+  const { user } = useUser();
   const { mealId } = route.params;
   const [detail, setDetail] = useState<MealDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -184,6 +194,29 @@ export default function Detail({ route }: any) {
     setTotalSaturatedFat(saturatedFatSum);
   }, [detail]);
 
+    useEffect(() => {
+      if (user && mealId) {
+        isFavorite(user.userid, mealId)
+          .then((res) => {
+            setIsLoved(res.isExists ?? false);
+          })
+          .catch(() => setIsLoved(false));
+      }
+    }, [user, mealId]);
+
+    const handleLovePress = async () => {
+      if (!user) return;
+      if (isLoved) {
+        // Unlike
+        await deleteUserFavorite(user.userid, mealId);
+        setIsLoved(false);
+      } else {
+        // Like
+        await addUserFavorite(user.userid, mealId);
+        setIsLoved(true);
+      }
+    };
+
   const renderIngredients = () => {
     if (!detail) return null;
 
@@ -212,6 +245,17 @@ export default function Detail({ route }: any) {
     );
   }
 
+  function getInstructionSteps(instructions: string): string[] {
+    if (!instructions) return [];
+    // Split by \r\n or . (period), but keep the period at the end of each step
+    // First split by \r\n, then further split each by period.
+    const lines = instructions.split(/\r?\n/).flatMap(line =>
+      line.split('.').map(s => s.trim()).filter(Boolean).map(s => s + '.')
+    );
+    // Remove empty or very short steps
+    return lines.map(s => s.trim()).filter(s => s.length > 2);
+  }
+
   if (!detail) {
     return (
       <View style={styles.container}>
@@ -230,7 +274,7 @@ export default function Detail({ route }: any) {
       {/* Love button */}
       <TouchableOpacity
         style={styles.loveIconContainer}
-        onPress={() => setIsLoved((prev) => !prev)}
+        onPress={handleLovePress}
         activeOpacity={0.7}
       >
         <Icon
@@ -263,7 +307,11 @@ export default function Detail({ route }: any) {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Instructions</Text>
-        <Text style={styles.instructions}>{detail.strInstructions}</Text>
+        {getInstructionSteps(detail.strInstructions).map((step, idx) => (
+          <Text key={idx} style={styles.instructions}>
+            {idx + 1}. {step}
+          </Text>
+        ))}
       </View>
 
       {detail.strYoutube ? (
@@ -350,6 +398,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 24,
     color: '#333',
+    marginTop: 5
   },
   nutritionText: {
     fontSize: 18,

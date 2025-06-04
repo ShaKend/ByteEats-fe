@@ -12,6 +12,7 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import { useUser } from 'context/UserContext';
 import { API } from "../../service/ApiService"
 import { StackNavigationProp } from '@react-navigation/stack';
+import { addUserHistory } from '../../service/ApiServiceUserHistory';
 
 interface Meal {
     idMeal: string;
@@ -39,7 +40,7 @@ function Home() {
     const [loading, setLoading] = useState(true);
     const navigation = useNavigation<StackNavigationProp<RootStackParamList, 'Home'>>();
     const { user } = useUser();
-    
+
     // Token expiration check
     useEffect(() => {
         const checkToken = async () => {
@@ -118,15 +119,6 @@ function Home() {
             });
     };
 
-    useEffect(() => {
-        fetchMeals('');
-        const fetchUsername = async () => {
-            const storedUsername = await AsyncStorage.getItem('username');
-            setUsername(storedUsername);
-        };
-        fetchUsername();
-    }, []);
-
     const profileUrl = `${API}/profile-images/${user?.profilepicture}`;
 
     useEffect(() => {
@@ -145,7 +137,7 @@ function Home() {
             >
                 <View style={styles.header}>
                     <View>
-                    <Text style={styles.greeting}>Hello, {user?.username}</Text>
+                        <Text style={styles.greeting}>Hello, {user?.username}</Text>
                         <Text style={styles.subtitle}>Achieve Your Nutrition Goals</Text>
                     </View>
                     <Image
@@ -203,7 +195,21 @@ function Home() {
                             <TouchableOpacity
                                 key={item.idMeal}
                                 style={styles.recommendationCard}
-                                onPress={() => navigation.navigate('Detail', { mealId: item.idMeal })}
+                                onPress={async () => {
+                                    try {
+                                        if (user?.userid) {
+                                            try{
+                                                await addUserHistory(user.userid, item.idMeal);
+                                            }catch(err){
+                                                console.error("Error adding to history: ", err);
+                                                throw err;
+                                            }
+                                        }
+                                        navigation.navigate('Detail', { mealId: item.idMeal });
+                                    } catch (error) {
+                                        console.error('Failed to add history:', error);
+                                    }
+                                }}
                             >
                                 <Image source={{ uri: item.strMealThumb }} style={styles.recommendationImage} />
                                 <Text style={styles.recommendationText}>{item.strMeal}</Text>
