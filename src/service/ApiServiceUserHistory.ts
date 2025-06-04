@@ -35,7 +35,7 @@ export const addUserHistory = async (
   try {
     const response = await axios.post(
       `${API}/api/user/${userId}/history`,
-      { idMeal: idmeal },
+      { idmeal },
       {
         headers: {
           Authorization: `Bearer ${token}`,
