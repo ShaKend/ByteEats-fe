@@ -11,7 +11,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { getAllUserFavorite } from 'service/ApiServiceUserFavorite';
 
 type RootStackParamList = {
-  Detail: { meal: Meal };
+  Detail: { mealId: string };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'Detail'>;
@@ -99,7 +99,7 @@ useFocusEffect(
             <TouchableOpacity
               key={meal.idMeal || index}
               style={styles.foodCard}
-              onPress={() => navigation.navigate('Detail', { meal })}
+              onPress={() => navigation.navigate('Detail', { mealId: meal.idMeal })}
             >
               <Image source={{ uri: meal.strMealThumb }} style={styles.foodImage} />
               <Text style={styles.foodName}>{meal.strMeal}</Text>
