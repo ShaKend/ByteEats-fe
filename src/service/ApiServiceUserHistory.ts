@@ -50,29 +50,65 @@ export const addUserHistory = async (
   }
 };
 
+
 /**
  * Delete a meal from user history
  */
 export const deleteUserHistory = async (
   userId: string,
-  idmeal: number | string
+  idmeal: number | string | undefined
 ) => {
+  if (!idmeal) {
+    console.warn("🚨 idmeal is undefined!");
+    return;
+  }
+
+  const token = await AsyncStorage.getItem("token");
+  if (!token) throw new Error("Missing token!");
+
+  try {
+    const response = await axios.request({
+      method: "DELETE",
+      url: `${API}/api/user/${userId}/history`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      data: { idmeal },
+    });
+    return response.data;
+  } catch (err: any) {
+    console.error(
+      "Error deleting user history:",
+      err.response?.data || err.message
+    );
+    throw err;
+  }
+};
+
+export const deleteAllUserHistories = async (userId: string) => {
   const token = await AsyncStorage.getItem("token");
   if (!token) throw new Error("Missing token!");
 
   try {
     const response = await axios.delete(
-      `${API}/api/user/${userId}/history`,
+      `${API}/api/user/${userId}/history/all`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        data: { idmeal }, // ✅ still works as long as backend supports it
-      } as any // type assertion to bypass TS error
+      }
     );
     return response.data;
-  } catch (err) {
-    console.error("Error deleting user history:", err);
+  } catch (err: any) {
+    console.error(
+      "Error deleting all user history:",
+      err.response?.data || err.message
+    );
     throw err;
   }
 };
+
+
+
+

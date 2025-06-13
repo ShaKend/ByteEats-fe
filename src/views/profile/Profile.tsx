@@ -1,4 +1,4 @@
-import { View, SafeAreaView, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, SafeAreaView, Text, StyleSheet, Image, TouchableOpacity, ActivityIndicator, ImageBackground } from "react-native";
 import React, { useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -41,6 +41,8 @@ function Profile() {
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [backgroundUri, setBackgroundUri] = useState<string | null>(null);
+
 
   const profileUrl = localImageUri
     ? localImageUri
@@ -48,6 +50,30 @@ function Profile() {
       ? `${API}/profile-images/${user?.profilepicture}`
       : null;
 
+  const handleSelectBackgroundImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: false,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const selectedImage = result.assets[0];
+      setBackgroundUri(selectedImage.uri);
+      await AsyncStorage.setItem("backgroundUri", selectedImage.uri);
+    }
+  };
+
+  useEffect(() => {
+  const loadBackgroundImage = async () => {
+    const uri = await AsyncStorage.getItem("backgroundUri");
+    if (uri) {
+      setBackgroundUri(uri);
+    }
+  };
+
+  loadBackgroundImage();
+}, []);
 
   const handleEdit = async () => {
     if (isEditing) {
@@ -61,12 +87,12 @@ function Profile() {
               name: "profile.jpg",
               type: "image/jpeg",
             } as any);
-          
+
             // Just upload, don't care about response filename
-              const uploadResponse = await updateProfileImage(formData);
-              console.log("Upload response:", uploadResponse);
+            const uploadResponse = await updateProfileImage(formData);
+            console.log("Upload response:", uploadResponse);
           }
-        
+
           // Update other user details (assuming backend uses JWT to identify user)
           await updateUser(
             user.userid,
@@ -79,7 +105,7 @@ function Profile() {
           const response = (await getProfile()) as { data: User };
           setUser(response.data);
           await refreshUser();
-          setLocalImageUri(null);          
+          setLocalImageUri(null);
         }
       } catch (err: any) {
         //console.error("Error saving profile:", err);
@@ -88,7 +114,7 @@ function Profile() {
         throw new Error(backendMsg);
       }
     }
-  
+
     setIsEditing(!isEditing);
   };
 
@@ -99,11 +125,11 @@ function Profile() {
         // Send code to user's email for verification
         await sendCodeToEmail(user.email);
         // Navigate to verification screen with user details
-        navigation.navigate('Verification', { 
-          email: user.email, 
-          username: user.username, 
-          password: user.password || '', 
-          action: 'change' 
+        navigation.navigate('Verification', {
+          email: user.email,
+          username: user.username,
+          password: user.password || '',
+          action: 'change'
         });
       } catch (err) {
         console.error("Error sending code to email:", err);
@@ -128,11 +154,11 @@ function Profile() {
       }
     }
   };
-  
+
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem("token");
-      
+
       navigation.dispatch(
         CommonActions.reset({
           index: 0,
@@ -158,7 +184,19 @@ function Profile() {
     <SafeAreaView style={styles.container}>
       <LinearGradient colors={['#BB7AE8', 'white']} style={styles.gradient} />
 
-      <View style={styles.avatarContainer}>
+      <ImageBackground
+        source={backgroundUri ? { uri: backgroundUri } : undefined}
+        style={styles.backgroundImage}
+      >
+        {isEditing && (
+          <TouchableOpacity onPress={handleSelectBackgroundImage} style={styles.editBackgroundBtn}>
+            <Text style={styles.editBackgroundText}>Edit Background</Text>
+          </TouchableOpacity>
+        )}
+        {/* Avatar dimasukkan ke dalam background */}
+
+      </ImageBackground>
+      <View style={styles.avatarWrapper}>
         <View style={styles.avatar}>
           <TouchableOpacity onPress={isEditing ? handleSelectImage : undefined}>
             <Image
@@ -167,68 +205,73 @@ function Profile() {
             />
           </TouchableOpacity>
         </View>
-        <Text style={styles.editText}>Edit foto</Text>
       </View>
-        <View style={{marginTop: 20}}>
-          <Textbox
-            value={user?.email}
-            onChange={(value) => setUser(user ? { ...user, email: value } : null)}
-            isDisabled={false}
-            label="Email"
-          />
-          <Textbox
-            value={user?.username}
-            onChange={(value) => setUser(user ? { ...user, username: value } : null)}
-            isDisabled={isEditing}
-            label="Name"
-          />
+      <TouchableOpacity onPress={isEditing ? handleSelectImage : undefined}>
+        <Text style={styles.editText}>Edit Photo</Text>
+      </TouchableOpacity>
 
-          <Textbox
-            value={user?.age?.toString()}
-            onChange={(value) => setUser(user ? { ...user, age: value } : null)}
-            isDisabled={isEditing}
-            label="Age"
-            maxLength={3}
-            keyboardType="numeric"
-          />
-          <View style={styles.ddContainer}>
-            <Text style={styles.ddText}>Gender</Text>
-            <View
-              style={styles.dropdown}>
-              <Picker
-                style={{ paddingLeft:0, marginLeft:0 }}
-                selectedValue={user?.gender ?? ''}
-                onValueChange={(itemValue) => {
-                  if (isEditing && user) {
-                    setUser({ ...user, gender: itemValue });
-                  }
-                }}
-                enabled={isEditing}
-              >
-                <Picker.Item label="Select Gender" value="" />
-                <Picker.Item label="Male" value="M" />
-                <Picker.Item label="Female" value="F" />
-              </Picker>
-            </View>
+
+
+      <View style={{ marginTop: 20 }}>
+        <Textbox
+          value={user?.email}
+          onChange={(value) => setUser(user ? { ...user, email: value } : null)}
+          isDisabled={false}
+          label="Email"
+        />
+        <Textbox
+          value={user?.username}
+          onChange={(value) => setUser(user ? { ...user, username: value } : null)}
+          isDisabled={isEditing}
+          label="Name"
+        />
+
+        <Textbox
+          value={user?.age?.toString()}
+          onChange={(value) => setUser(user ? { ...user, age: value } : null)}
+          isDisabled={isEditing}
+          label="Age"
+          maxLength={3}
+          keyboardType="numeric"
+        />
+        <View style={styles.ddContainer}>
+          <Text style={styles.ddText}>Gender</Text>
+          <View
+            style={styles.dropdown}>
+            <Picker
+              style={{ paddingLeft: 0, marginLeft: 0 }}
+              selectedValue={user?.gender ?? ''}
+              onValueChange={(itemValue) => {
+                if (isEditing && user) {
+                  setUser({ ...user, gender: itemValue });
+                }
+              }}
+              enabled={isEditing}
+            >
+              <Picker.Item label="Select Gender" value="" />
+              <Picker.Item label="Male" value="M" />
+              <Picker.Item label="Female" value="F" />
+            </Picker>
           </View>
+        </View>
         <EditBtn
           onClick={() => handleEdit()}
           text={isEditing ? "Save" : "Edit Profile"}
         />
 
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => handleChangePw()}
           style={styles.resetPassword}
           disabled={isLoading}
         >
-          <Text style={{color: Color.darkPurple, textDecorationLine: 'underline'}}>
+          <Text style={{ color: Color.darkPurple, textDecorationLine: 'underline' }}>
             Reset Password
           </Text>
         </TouchableOpacity>
         {isLoading && (
           <ActivityIndicator size="large" color={Color.darkPurple} style={{ marginTop: 20 }} />
         )}
-        </View>
+      </View>
 
 
       <SignButton
@@ -247,40 +290,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
   },
+  avatarWrapper: {
+    alignItems: "center",
+    marginTop: -45,
+    marginBottom: 10,
+    zIndex: 2,
+  },
   gradient: {
     position: "absolute",
     height: "50%",
     width: "100%",
     top: 0,
   },
+  backgroundImage: {
+    width: '100%',
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#eee',
+    borderBottomLeftRadius: 50,
+    borderBottomRightRadius: 50,
+    overflow: 'hidden',
+    shadowOpacity: 0.7,
+    shadowRadius: 6,
+    elevation: 12,
+  },
   avatarContainer: {
     alignItems: "center",
-    marginTop: 50,
+    justifyContent: 'flex-end',
+    marginTop: 2,
+    paddingBottom: 10,
+    height: 200,
+    width: "100%",
   },
   avatar: {
     height: 100,
     width: 100,
     borderRadius: 50,
-    backgroundColor: "white",
+    backgroundColor: "#BB7AE8",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 5,
-    elevation: 5,
+    elevation: 12,
   },
   avatarImage: {
-    height: 90,
-    width: 90,
-    resizeMode: "contain",
+    height: 100,
+    width: 100,
+    resizeMode: "cover",
+    borderRadius: 45,
   },
   editText: {
-    marginTop: 8,
     color: "#6C4BA6",
     fontSize: 14,
+    alignSelf: "center",
   },
-
+  editBackgroundText: {
+    position: 'absolute',
+    top: '45%',
+    alignSelf: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    color: 'white',
+    textDecorationLine: 'underline',
+  },
+  editBackgroundBtn: {
+    marginLeft: 1,
+    borderRadius: 10,
+  },
   // profile info
   profileInfo: {
     marginTop: 30,
@@ -329,7 +409,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#C5172E",
     width: 240,
     position: "absolute",
-    bottom: 70,
+    bottom: 130,
     alignSelf: "center",
   },
   text: {
@@ -348,3 +428,4 @@ const styles = StyleSheet.create({
 });
 
 export default Profile;
+

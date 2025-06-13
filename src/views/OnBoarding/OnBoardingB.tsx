@@ -39,7 +39,7 @@ export default function OnBoardingB() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f7e6ff",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     marginBottom: 10,
-    marginTop: 30, 
+    marginTop: 30,
   },
   title: {
     fontSize: 28,
@@ -74,14 +74,14 @@ const styles = StyleSheet.create({
   },
   waveBackground: {
     position: "absolute",
-    bottom: -360,
-    width: "100%",
-    height: "100%",
+    bottom: -300,
+    width: "130%",
+    height: "95%",
     zIndex: 0,
   },
   nextButton: {
     position: "absolute",
-    bottom: 10,
+    bottom: 50,
     right: 30,
     backgroundColor: "#5D3891",
     paddingVertical: 12,

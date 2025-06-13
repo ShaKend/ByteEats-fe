@@ -84,7 +84,8 @@ useFocusEffect(
 
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { paddingBottom: 90 }]}>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Favorite Food</Text>
         {loading ? (
@@ -115,7 +116,8 @@ useFocusEffect(
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAFA', // putih abu-abu muda seperti homepage
+    backgroundColor: "#f7e6ff",
+    paddingBottom: 20,
   },
   scrollContent: {
     paddingBottom: 20,

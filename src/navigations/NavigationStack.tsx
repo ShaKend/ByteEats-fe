@@ -13,6 +13,8 @@ import Detail from "../views/DetailFood/Detail";
 import BreakfastMenu from '../views/category/BreakfastMenu';
 import LunchMenu from '../views/category/LunchMenu';
 import DinnerMenu from '../views/category/DinnerMenu';
+import Search from "../views/search/Search";
+import ScanFood from "views/scan/ScanFood";
 
 const Stack = createStackNavigator();
 
@@ -30,6 +32,8 @@ export default function NavigationStack() {
                 <Stack.Screen name="BreakfastMenu" component={BreakfastMenu} />
                 <Stack.Screen name="LunchMenu" component={LunchMenu} />
                 <Stack.Screen name="DinnerMenu" component={DinnerMenu} />
+                <Stack.Screen name="Search" component={Search} />
+                <Stack.Screen name="ScanFood" component={ScanFood} />
             </Stack.Navigator>
         </NavigationContainer>
     );

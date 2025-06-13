@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
-
+import { useNavigation } from '@react-navigation/native';
 import { useUser } from 'context/UserContext';
 import { isFavorite, addUserFavorite, deleteUserFavorite } from 'service/ApiServiceUserFavorite';
 
@@ -149,6 +149,8 @@ export default function Detail({ route }: any) {
 
   // State love
   const [isLoved, setIsLoved] = useState(false);
+  const navigation = useNavigation();
+
 
   useEffect(() => {
     axios
@@ -174,6 +176,7 @@ export default function Detail({ route }: any) {
     let fatSum = 0;
     let saturatedFatSum = 0;
 
+
     for (let i = 1; i <= 20; i++) {
       const ingredient = detail[`strIngredient${i}`];
       const measure = detail[`strMeasure${i}`];
@@ -194,28 +197,28 @@ export default function Detail({ route }: any) {
     setTotalSaturatedFat(saturatedFatSum);
   }, [detail]);
 
-    useEffect(() => {
-      if (user && mealId) {
-        isFavorite(user.userid, mealId)
-          .then((res) => {
-            setIsLoved(res.isExists ?? false);
-          })
-          .catch(() => setIsLoved(false));
-      }
-    }, [user, mealId]);
+  useEffect(() => {
+    if (user && mealId) {
+      isFavorite(user.userid, mealId)
+        .then((res) => {
+          setIsLoved(res.isExists ?? false);
+        })
+        .catch(() => setIsLoved(false));
+    }
+  }, [user, mealId]);
 
-    const handleLovePress = async () => {
-      if (!user) return;
-      if (isLoved) {
-        // Unlike
-        await deleteUserFavorite(user.userid, mealId);
-        setIsLoved(false);
-      } else {
-        // Like
-        await addUserFavorite(user.userid, mealId);
-        setIsLoved(true);
-      }
-    };
+  const handleLovePress = async () => {
+    if (!user) return;
+    if (isLoved) {
+      // Unlike
+      await deleteUserFavorite(user.userid, mealId);
+      setIsLoved(false);
+    } else {
+      // Like
+      await addUserFavorite(user.userid, mealId);
+      setIsLoved(true);
+    }
+  };
 
   const renderIngredients = () => {
     if (!detail) return null;
@@ -271,6 +274,13 @@ export default function Detail({ route }: any) {
     >
       <Image source={{ uri: detail.strMealThumb }} style={styles.image} />
 
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="arrow-left" size={20} color="#4b2e83" />
+      </TouchableOpacity>
+
       {/* Love button */}
       <TouchableOpacity
         style={styles.loveIconContainer}
@@ -279,7 +289,7 @@ export default function Detail({ route }: any) {
       >
         <Icon
           name="heart"
-          size={32}
+          size={30}
           color={isLoved ? '#e62117' : '#aaa'}
         />
       </TouchableOpacity>
@@ -335,6 +345,15 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#F5F0FA',
     flexGrow: 1,
+    paddingTop: 80,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    borderRadius: 30,
+    padding: 8,
+    zIndex: 11,
   },
   image: {
     width: '100%',
@@ -349,11 +368,11 @@ const styles = StyleSheet.create({
   },
   loveIconContainer: {
     position: 'absolute',
-    top: 320,
-    right: 30,
+    top: 370,
+    right: 25,
     zIndex: 10,
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 35,
     padding: 6,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
