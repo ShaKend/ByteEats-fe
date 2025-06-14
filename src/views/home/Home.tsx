@@ -32,6 +32,8 @@ type RootStackParamList = {
     BreakfastMenu: undefined;
     LunchMenu: undefined;
     DinnerMenu: undefined;
+    Profile: undefined;
+    Search: undefined;
 };
 
 function Home() {
@@ -135,7 +137,7 @@ function Home() {
                 colors={['#D8BDF7', '#E2C9FA', '#F5F5F5']}
                 style={styles.headerGradient}
             >
-                <View style={styles.header}>
+                <TouchableOpacity style={styles.header} onPress={() => navigation.navigate('Profile')}>
                     <View>
                         <Text style={styles.greeting}>Hello, {user?.username}</Text>
                         <Text style={styles.subtitle}>Achieve Your Nutrition Goals</Text>
@@ -144,22 +146,23 @@ function Home() {
                         source={profileUrl ? { uri: profileUrl } : require('../../assets/byte-eats-logo.png')}
                         style={styles.avatar}
                     />
-                </View>
+                </TouchableOpacity>
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
                     <Icon name="search" size={20} color="#5D2084" style={styles.searchIcon} />
-                    <TextInput
-                        placeholder="Search here"
-                        style={styles.searchInput}
-                        placeholderTextColor="#888"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
+                    <TouchableOpacity
+                        style={{ flex: 1 }}
+                        onPress={() => navigation.navigate('Search')}
+                    >
+                        <Text style={{ color: '#888', paddingVertical: 10 }}>
+                            {searchQuery || 'Search here'}
+                        </Text>
+                    </TouchableOpacity>
                 </View>
             </LinearGradient>
 
-            <ScrollView>
+            <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
                 {/* Food Categories */}
                 <View style={styles.categoryContainer}>
                     <TouchableOpacity style={styles.categoryBox} onPress={() => onCategoryPress('Breakfast')}>
@@ -198,9 +201,9 @@ function Home() {
                                 onPress={async () => {
                                     try {
                                         if (user?.userid) {
-                                            try{
+                                            try {
                                                 await addUserHistory(user.userid, item.idMeal);
-                                            }catch(err){
+                                            } catch (err) {
                                                 console.error("Error adding to history: ", err);
                                                 throw err;
                                             }
