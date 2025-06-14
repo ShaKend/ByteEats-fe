@@ -250,13 +250,12 @@ export default function Detail({ route }: any) {
 
   function getInstructionSteps(instructions: string): string[] {
     if (!instructions) return [];
-    // Split by \r\n or . (period), but keep the period at the end of each step
-    // First split by \r\n, then further split each by period.
-    const lines = instructions.split(/\r?\n/).flatMap(line =>
-      line.split('.').map(s => s.trim()).filter(Boolean).map(s => s + '.')
-    );
-    // Remove empty or very short steps
-    return lines.map(s => s.trim()).filter(s => s.length > 2);
+
+    // Pisahkan berdasarkan line break (\n), dan pastikan tidak ada baris kosong
+    return instructions
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 10); // minimal panjang untuk dianggap langkah
   }
 
   if (!detail) {
@@ -317,10 +316,17 @@ export default function Detail({ route }: any) {
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Instructions</Text>
+        <Text style={{ marginBottom: 12, color: '#555', fontSize: 15 }}>
+          Here are the cooking steps that you can follow:
+        </Text>
+
         {getInstructionSteps(detail.strInstructions).map((step, idx) => (
-          <Text key={idx} style={styles.instructions}>
-            {idx + 1}. {step}
-          </Text>
+          <View key={idx} style={{ marginBottom: 12, flexDirection: 'row', alignItems: 'flex-start' }}>
+            <Text style={{ fontWeight: 'bold', marginRight: 6, color: '#5D2084' }}>
+              {idx + 1}.
+            </Text>
+            <Text style={styles.instructions}>{step}</Text>
+          </View>
         ))}
       </View>
 
@@ -414,10 +420,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   instructions: {
-    fontSize: 17,
+    fontSize: 16,
     lineHeight: 24,
-    color: '#333',
-    marginTop: 5
+    color: '#444',
+    flex: 1,
   },
   nutritionText: {
     fontSize: 18,
