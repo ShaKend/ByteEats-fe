@@ -2,8 +2,15 @@ import React from "react";
 import { Color } from "../../styles/Color";
 import { StyleSheet, Image, SafeAreaView, View } from "react-native";
 import SignButton from "../../components/login/SignButton";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useEffect } from "react";
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from "navigations/RootStackParamList";
 
 function Login(){
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
     return(
         <SafeAreaView style={styles.container}>
             <View style={styles.content}>
@@ -13,16 +20,14 @@ function Login(){
                         text="Sign Up"
                         styleButton={styles.signUp}
                         styleText={styles.btnTextSignUp}
-                        loginAction='SignUp'
-                        authprovider="sign"
-                    ></SignButton>
+                        onPress={() => navigation.navigate('Sign', { loginAction: 'SignUp' })}
+                    />
                     <SignButton
                         text="Sign in"
                         styleButton={styles.signIn}
                         styleText={styles.btnTextSignIn}
-                        loginAction='SignIn'
-                        authprovider="sign"
-                    ></SignButton>
+                        onPress={() => navigation.navigate('Sign', { loginAction: 'SignIn' })}
+                    />
                 </View>
             </View>
         </SafeAreaView>

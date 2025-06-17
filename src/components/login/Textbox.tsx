@@ -6,23 +6,43 @@ import { Color } from "../../styles/Color";
 interface TextboxProps{
     styleTextbox?: ViewStyle;
     styleTextInput?: TextStyle;
-    iconName: string;
+    iconName?: string;
     placeholder: string;
     onChangeText?: (text: string) => void;
+    keyboardType?: "default" | "numeric" | "email-address" | "phone-pad"; 
+    maxLength?: number
+    value?: string | number; // Optional prop for controlled input
+    secureTextEntry?: boolean; // Optional prop for secure text entry
 }
 
-const Textbox: React.FC<TextboxProps> = ({styleTextbox, styleTextInput, iconName, placeholder, onChangeText}) => {
-    return(
-        <View style={[styles.container, styleTextbox]}>
-            <Icon name={iconName} size={20} color={Color.darkPurple} style={styles.icon} />
-            <TextInput
-              placeholder={placeholder}
-              style={[styles.textInput, styleTextInput]}
-              placeholderTextColor="gray"
-              onChangeText={onChangeText}
-            />
-        </View>
-    );
+const Textbox: React.FC<TextboxProps> = ({
+  styleTextbox,
+  styleTextInput,
+  iconName,
+  placeholder,
+  onChangeText,
+  keyboardType = "default",
+  maxLength,
+  value,
+  secureTextEntry = false, // Default to false if not provided
+}) => {
+  return (
+    <View style={[styles.container, styleTextbox]}>
+      {iconName && (
+        <Icon name={iconName} size={20} color={Color.darkPurple} style={styles.icon} />
+      )}
+      <TextInput
+        placeholder={placeholder}
+        style={[styles.textInput, styleTextInput]}
+        placeholderTextColor="gray"
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        maxLength={maxLength}
+        value={value !== undefined ? String(value) : undefined} // Ensure value is always a string
+        secureTextEntry={secureTextEntry} // Use secureTextEntry prop
+      />
+    </View>
+  );
 };
 
 
