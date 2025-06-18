@@ -33,4 +33,5 @@ And this is our Application preview
     ![History Page](https://github.com/user-attachments/assets/b4dbac08-6d38-4275-8edf-3d4e6d82d295)
 
 11. Profile Page
+
     ![Profile Page](https://github.com/user-attachments/assets/61d1e230-d9de-4ea3-bcff-e92ac01da002)
